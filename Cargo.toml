@@ -1,0 +1,9 @@
+[package]
+name = "uctool"
+version = "0.1.0"
+authors = ["Łukasz Kostka <lukasz.kostka@netng.pl>"]
+edition = "2018"
+
+[dependencies]
+serial = "0.4.*"
+avrisp = "0.2.*"

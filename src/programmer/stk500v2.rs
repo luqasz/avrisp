@@ -127,10 +127,8 @@ impl Into<u8> for Status {
 /// Body as bytes
 /// Calculated checksum (XOR of all bytes in message)
 struct Message {
-    start: u8,
     seq: u8,
     len: u16,
-    token: u8,
     body: Vec<u8>,
 }
 
@@ -145,8 +143,6 @@ impl Message {
             len: body.len() as u16,
             body: body.to_vec(),
             seq: seq,
-            token: Message::TOKEN,
-            start: Message::MESSAGE_START,
         }
     }
 
@@ -157,14 +153,18 @@ impl Message {
             len: u16::from_be_bytes([bytes[2], bytes[3]]) as u16,
             body: bytes[5..].to_vec(),
             seq: bytes[1],
-            token: bytes[4],
-            start: bytes[0],
         }
     }
 
     fn pack(&self) -> Vec<u8> {
         let len = (self.len as u16).to_be_bytes();
-        let mut bytes: Vec<u8> = vec![self.start, self.seq, len[0], len[1], self.token];
+        let mut bytes: Vec<u8> = vec![
+            Message::MESSAGE_START,
+            self.seq,
+            len[0],
+            len[1],
+            Message::TOKEN,
+        ];
         bytes.extend_from_slice(&self.body);
         bytes.push(self.checksum());
         bytes

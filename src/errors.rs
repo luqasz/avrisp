@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt;
 use std::io;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ChecksumError;
 
 impl fmt::Display for ChecksumError {
@@ -74,5 +74,11 @@ pub enum ErrorKind {
 impl From<io::Error> for ErrorKind {
     fn from(err: io::Error) -> ErrorKind {
         ErrorKind::Io(err)
+    }
+}
+
+impl From<ChecksumError> for ErrorKind {
+    fn from(_: ChecksumError) -> ErrorKind {
+        ErrorKind::ChecksumError
     }
 }

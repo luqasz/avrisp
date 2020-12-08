@@ -1,9 +1,10 @@
 use crate::errors;
 use crate::programmer;
+use crate::programmer::{AVRFuse, AVRProgrammer, Programmer};
 use avrisp;
 use serial::core::{Error, SerialDevice, SerialPortSettings};
+use std::convert::{TryFrom, TryInto};
 use std::fmt;
-use std::io;
 use std::io::prelude::*;
 use std::time::Duration;
 
@@ -120,12 +121,13 @@ impl Into<u8> for Status {
 }
 
 /// Message structure:
-/// MESSAGE_START (always 0x1b)
+/// MESSAGE_START
 /// Sequence number (u8 incremented for each message sent, overflows after 0xff)
-/// Body length (STK500 firmware can only handle body with maximum of 275 bytes, in big endian order)
-/// TOKEN (always 0x0e)
+/// Body length (maximum of 275 bytes, in big endian order)
+/// TOKEN
 /// Body as bytes
-/// Calculated checksum (XOR of all bytes in message)
+/// Calculated checksum
+#[derive(Debug)]
 struct Message {
     seq: u8,
     len: u16,
@@ -133,30 +135,29 @@ struct Message {
 }
 
 impl Message {
-    /// Constant fields within message.
-    /// Same for reading and writing.
     const MESSAGE_START: u8 = 0x1B;
     const TOKEN: u8 = 0x0E;
 
-    fn from_body(seq: u8, body: Vec<u8>) -> Self {
+    fn new(seq: u8, body: Vec<u8>) -> Self {
         Message {
             len: body.len() as u16,
-            body: body.to_vec(),
+            body: body,
             seq: seq,
         }
     }
 
-    /// Construct Message fron slice of bytes.
-    /// Bytes can not contain checksum.
-    fn from_bytes(bytes: &[u8]) -> Self {
-        Message {
-            len: u16::from_be_bytes([bytes[2], bytes[3]]) as u16,
-            body: bytes[5..].to_vec(),
-            seq: bytes[1],
+    /// Calculate checksum (XOR of all bytes)
+    fn calc_checksum(bytes: &[u8]) -> u8 {
+        let mut result = bytes[0];
+        for byte in bytes.iter().skip(1) {
+            result ^= byte;
         }
+        return result;
     }
+}
 
-    fn pack(&self) -> Vec<u8> {
+impl Into<Vec<u8>> for Message {
+    fn into(self) -> Vec<u8> {
         let len = (self.len as u16).to_be_bytes();
         let mut bytes: Vec<u8> = vec![
             Message::MESSAGE_START,
@@ -165,23 +166,27 @@ impl Message {
             len[1],
             Message::TOKEN,
         ];
-        bytes.extend_from_slice(&self.body);
-        bytes.push(self.checksum());
+        bytes.extend(&self.body);
+        bytes.push(Message::calc_checksum(&bytes));
         bytes
     }
+}
 
-    /// Calculate checksum (XOR of all fields in message)
-    fn checksum(&self) -> u8 {
-        let mut result = Message::MESSAGE_START;
-        result ^= self.seq;
-        for byte in self.len.to_be_bytes().iter() {
-            result ^= byte;
+impl TryFrom<Vec<u8>> for Message {
+    type Error = errors::ChecksumError;
+
+    fn try_from(mut bytes: Vec<u8>) -> Result<Self, Self::Error> {
+        let len = u16::from_be_bytes([bytes[2], bytes[3]]) as u16;
+        let crc: u8 = bytes.pop().unwrap();
+        if crc != Message::calc_checksum(&bytes) {
+            return Err(errors::ChecksumError);
+        } else {
+            Ok(Message {
+                len: len,
+                body: bytes[5..=(bytes.len() - 1) as usize].to_vec(),
+                seq: bytes[1],
+            })
         }
-        result ^= Message::TOKEN;
-        for byte in self.body.iter() {
-            result ^= byte;
-        }
-        result
     }
 }
 
@@ -189,11 +194,8 @@ impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "seq: {} len: {} checksum: {} body: {:?}",
-            self.seq,
-            self.len,
-            self.checksum(),
-            self.body
+            "seq: {} len: {} body: {:?}",
+            self.seq, self.len, self.body,
         )
     }
 }
@@ -220,13 +222,14 @@ impl Iterator for SequenceGenerator {
     }
 }
 
-pub struct Normal {
+pub struct STK500v2 {
     port: serial::SystemPort,
     sequencer: SequenceGenerator,
+    specs: avrisp::Specs,
 }
 
-impl Normal {
-    pub fn open(port: &String) -> Result<Normal, Error> {
+impl STK500v2 {
+    pub fn open(port: &String, specs: avrisp::Specs) -> Result<STK500v2, Error> {
         let mut port = serial::open(&port)?;
         let mut settings = port.read_settings()?;
         settings.set_baud_rate(serial::Baud115200)?;
@@ -235,14 +238,17 @@ impl Normal {
         settings.set_char_size(serial::Bits8);
         port.write_settings(&settings)?;
         port.set_timeout(Duration::from_secs(1))?;
-        Ok(Normal {
+        Ok(STK500v2 {
             port: port,
             sequencer: SequenceGenerator::new(),
+            specs: specs,
         })
     }
 
-    fn write_message(&mut self, msg: Message) -> Result<(), io::Error> {
-        self.port.write_all(&msg.pack().as_slice())
+    fn write_message(&mut self, msg: Message) -> Result<(), errors::ErrorKind> {
+        let msg: Vec<u8> = msg.into();
+        self.port.write_all(msg.as_slice())?;
+        return Ok(());
     }
 
     fn read_message(&mut self) -> Result<Message, errors::ErrorKind> {
@@ -252,23 +258,18 @@ impl Normal {
         // Extend to fit body and checksum byte.
         buf.resize(buf.len() + len + 1, 0);
         self.port.read_exact(&mut buf[5..])?;
-        // Remove last byte which is a checksum.
-        let read_checksum = buf.pop().unwrap();
+        println!("read buffer {:?}", buf);
 
-        let msg = Message::from_bytes(&buf);
-        if msg.checksum() != read_checksum {
-            return Err(errors::ErrorKind::ChecksumError {});
-        }
-        Ok(msg)
+        let msg = Message::try_from(buf)?;
+        println!("{}", msg);
+        return Ok(msg);
     }
 
     fn cmd(&mut self, cmd: u8, mut body: Vec<u8>) -> Result<Message, errors::ErrorKind> {
         let seq = self.sequencer.next().unwrap();
         body.insert(0, cmd);
-        let sent_msg = Message::from_body(seq, body);
-        println!("writing: {}", sent_msg);
+        let sent_msg = Message::new(seq, body);
         self.write_message(sent_msg)?;
-
         let read_msg = self.read_message()?;
 
         if seq != read_msg.seq {
@@ -280,7 +281,6 @@ impl Normal {
         if read_msg.body[1] != Status::CmdOk.into() {
             return Err(errors::ErrorKind::StatusError {});
         }
-        println!("reading: {}", read_msg);
         Ok(read_msg)
     }
 
@@ -303,57 +303,108 @@ impl Normal {
     pub fn read_programmer_signature(&mut self) -> Result<programmer::Variant, errors::ErrorKind> {
         let msg = self.cmd(command::Normal::SignOn.into(), vec![])?;
         let variant = String::from_utf8(msg.body[3..].to_vec()).unwrap();
+        println!("{}", variant);
         match variant.as_ref() {
             "STK500_2" => Ok(programmer::Variant::STK500_V2),
             "AVRISP_2" => Ok(programmer::Variant::AVRISP_2),
             _ => panic!("Unknown programmer type"),
         }
     }
+}
 
-    fn set_reset_polarity(&mut self, polarity: bool) -> Result<(), errors::ErrorKind> {
-        self.set_param(param::RW::ResetPolarity, polarity as u8)?;
-        Ok(())
-    }
-
-    pub fn isp_mode(mut self, specs: avrisp::Specs) -> Result<IspMode, errors::ErrorKind> {
+impl TryInto<IspMode> for STK500v2 {
+    type Error = errors::ErrorKind;
+    fn try_into(mut self) -> Result<IspMode, Self::Error> {
         let bytes = vec![
-            specs.timeout,
-            specs.stab_delay,
-            specs.cmd_exe_delay,
-            specs.synch_loops,
-            specs.byte_delay,
-            specs.pool_value,
-            specs.pool_index,
+            self.specs.timeout,
+            self.specs.stab_delay,
+            self.specs.cmd_exe_delay,
+            self.specs.synch_loops,
+            self.specs.byte_delay,
+            self.specs.pool_value,
+            self.specs.pool_index,
             avrisp::PROGRAMMING_ENABLE.0,
             avrisp::PROGRAMMING_ENABLE.1,
             avrisp::PROGRAMMING_ENABLE.2,
             avrisp::PROGRAMMING_ENABLE.3,
         ];
-        self.set_reset_polarity(specs.reset_polarity)?;
+        self.set_param(param::RW::ResetPolarity, self.specs.reset_polarity.into())?;
         self.cmd(command::Normal::EnterIspMode.into(), bytes)?;
-        Ok(IspMode::new(self, specs))
+        Ok(IspMode::new(self))
     }
 }
 
 pub struct IspMode {
-    prog: Normal,
-    specs: avrisp::Specs,
+    prog: STK500v2,
 }
 
 impl IspMode {
-    fn new(prog: Normal, specs: avrisp::Specs) -> IspMode {
-        IspMode {
-            prog: prog,
-            specs: specs,
-        }
+    fn new(prog: STK500v2) -> IspMode {
+        IspMode { prog: prog }
     }
 
-    pub fn erase(&mut self) -> Result<(), errors::ErrorKind> {
+    pub fn read_flash(&mut self, start: usize, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
+        // For word-addressed memories (program flash), the Address parameter is the word address.
+        let addr_step = self.prog.specs.flash.page_size / 2;
+        for (addr, buffer) in (start..bytes.len())
+            .step_by(addr_step)
+            .zip(bytes.chunks_exact_mut(self.prog.specs.flash.page_size))
+        {
+            self.prog.cmd(
+                command::Normal::LoadAddress.into(),
+                (addr as u32).to_be_bytes().to_vec(),
+            )?;
+            let length_bytes = (self.prog.specs.flash.page_size as u16).to_be_bytes();
+            let mut msg = self.prog.cmd(
+                command::Isp::ReadFlash.into(),
+                vec![length_bytes[0], length_bytes[1], avrisp::READ_FLASH_LOW.0],
+            )?;
+            let data_offset = 2;
+            buffer.swap_with_slice(
+                &mut msg.body[data_offset..(self.prog.specs.flash.page_size + data_offset)],
+            );
+        }
+        Ok(())
+    }
+
+    pub fn read_eeprom(&mut self, start: usize, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
+        for (addr, buffer) in (start..(bytes.len() + start))
+            .step_by(self.prog.specs.eeprom.page_size)
+            .zip(bytes.chunks_exact_mut(self.prog.specs.eeprom.page_size))
+        {
+            self.prog.cmd(
+                command::Normal::LoadAddress.into(),
+                (addr as u32).to_be_bytes().to_vec(),
+            )?;
+            let length_bytes = (self.prog.specs.eeprom.page_size as u16).to_be_bytes();
+            let mut msg = self.prog.cmd(
+                command::Isp::ReadEeprom.into(),
+                vec![length_bytes[0], length_bytes[1], avrisp::READ_EEPROM.0],
+            )?;
+            let data_offset = 2;
+            buffer.swap_with_slice(
+                &mut msg.body[data_offset..(self.prog.specs.eeprom.page_size + data_offset)],
+            );
+        }
+        Ok(())
+    }
+
+    fn read_fuse(&mut self, cmd: avrisp::IspCommand) -> Result<u8, errors::ErrorKind> {
+        let msg = self.prog.cmd(
+            command::Isp::ReadFuse.into(),
+            vec![self.prog.specs.fuse_poll_index, cmd.0, cmd.1, cmd.2, cmd.3],
+        )?;
+        Ok(msg.body[2])
+    }
+}
+
+impl Programmer for IspMode {
+    fn erase(&mut self) -> Result<(), errors::ErrorKind> {
         self.prog.cmd(
             command::Isp::ChipErase.into(),
             vec![
-                self.specs.erase_delay,
-                self.specs.erase_poll_method,
+                self.prog.specs.erase_delay,
+                self.prog.specs.erase_poll_method,
                 avrisp::CHIP_ERASE.0,
                 avrisp::CHIP_ERASE.1,
                 avrisp::CHIP_ERASE.2,
@@ -363,77 +414,19 @@ impl IspMode {
         Ok(())
     }
 
-    pub fn read_flash(&mut self, start: usize, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
-        // For word-addressed memories (program flash), the Address parameter is the word address.
-        let addr_step = self.specs.flash.page_size / 2;
-        for (addr, buffer) in (start..bytes.len())
-            .step_by(addr_step)
-            .zip(bytes.chunks_exact_mut(self.specs.flash.page_size))
-        {
-            self.prog.cmd(
-                command::Normal::LoadAddress.into(),
-                (addr as u32).to_be_bytes().to_vec(),
-            )?;
-            let length_bytes = (self.specs.flash.page_size as u16).to_be_bytes();
-            let mut msg = self.prog.cmd(
-                command::Isp::ReadFlash.into(),
-                vec![length_bytes[0], length_bytes[1], avrisp::READ_FLASH_LOW.0],
-            )?;
-            let data_offset = 2;
-            buffer.swap_with_slice(
-                &mut msg.body[data_offset..(self.specs.flash.page_size + data_offset)],
-            );
-        }
+    fn close(mut self) -> Result<(), errors::ErrorKind> {
+        let bytes = vec![self.prog.specs.pre_delay, self.prog.specs.post_delay];
+        self.prog.cmd(command::Normal::LeaveIspMode.into(), bytes)?;
         Ok(())
     }
+}
 
-    pub fn read_eeprom(&mut self, start: usize, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
-        for (addr, buffer) in (start..(bytes.len() + start))
-            .step_by(self.specs.eeprom.page_size)
-            .zip(bytes.chunks_exact_mut(self.specs.eeprom.page_size))
-        {
-            self.prog.cmd(
-                command::Normal::LoadAddress.into(),
-                (addr as u32).to_be_bytes().to_vec(),
-            )?;
-            let length_bytes = (self.specs.eeprom.page_size as u16).to_be_bytes();
-            let mut msg = self.prog.cmd(
-                command::Isp::ReadEeprom.into(),
-                vec![length_bytes[0], length_bytes[1], avrisp::READ_EEPROM.0],
-            )?;
-            let data_offset = 2;
-            buffer.swap_with_slice(
-                &mut msg.body[data_offset..(self.specs.eeprom.page_size + data_offset)],
-            );
-        }
-        Ok(())
-    }
-
-    fn read_fuse(&mut self, cmd: avrisp::IspCommand) -> Result<u8, errors::ErrorKind> {
-        let msg = self.prog.cmd(
-            command::Isp::ReadFuse.into(),
-            vec![self.specs.fuse_poll_index, cmd.0, cmd.1, cmd.2, cmd.3],
-        )?;
-        Ok(msg.body[2])
-    }
-
-    pub fn read_low_fuse(&mut self) -> Result<u8, errors::ErrorKind> {
-        self.read_fuse(avrisp::READ_LOW_FUSE)
-    }
-
-    pub fn read_high_fuse(&mut self) -> Result<u8, errors::ErrorKind> {
-        self.read_fuse(avrisp::READ_HIGH_FUSE)
-    }
-
-    pub fn read_extended_fuse(&mut self) -> Result<u8, errors::ErrorKind> {
-        self.read_fuse(avrisp::READ_EXTENDED_FUSE)
-    }
-
-    pub fn read_lock_byte(&mut self) -> Result<u8, errors::ErrorKind> {
+impl AVRProgrammer for IspMode {
+    fn get_lock_byte(&mut self) -> Result<u8, errors::ErrorKind> {
         let msg = self.prog.cmd(
             command::Isp::ReadLock.into(),
             vec![
-                self.specs.lock_poll_index,
+                self.prog.specs.lock_poll_index,
                 avrisp::READ_LOCK.0,
                 avrisp::READ_LOCK.1,
                 avrisp::READ_LOCK.2,
@@ -443,13 +436,13 @@ impl IspMode {
         Ok(msg.body[2])
     }
 
-    pub fn read_mcu_signature(&mut self) -> Result<avrisp::Signature, errors::ErrorKind> {
+    fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, errors::ErrorKind> {
         let mut signature: [u8; 3] = [0; 3];
         for addr in 0..signature.len() {
             let msg = self.prog.cmd(
                 command::Isp::ReadSignature.into(),
                 vec![
-                    self.specs.signature_poll_index,
+                    self.prog.specs.signature_poll_index,
                     avrisp::READ_SIGNATURE.0,
                     avrisp::READ_SIGNATURE.1,
                     addr as u8,
@@ -460,14 +453,13 @@ impl IspMode {
         }
         Ok(avrisp::Signature::from(signature))
     }
-}
 
-impl Drop for IspMode {
-    fn drop(&mut self) {
-        let bytes = vec![self.specs.pre_delay, self.specs.post_delay];
-        self.prog
-            .cmd(command::Normal::LeaveIspMode.into(), bytes)
-            .unwrap();
+    fn get_fuses(&mut self) -> Result<AVRFuse, errors::ErrorKind> {
+        Ok(AVRFuse {
+            low: self.read_fuse(avrisp::READ_LOW_FUSE)?,
+            high: self.read_fuse(avrisp::READ_HIGH_FUSE)?,
+            extended: self.read_fuse(avrisp::READ_EXTENDED_FUSE)?,
+        })
     }
 }
 
@@ -495,6 +487,54 @@ mod tests {
         fn increments_by_1() {
             let mut gen = SequenceGenerator::new().skip(1);
             assert_eq!(gen.next(), Some(1));
+        }
+    }
+
+    use super::Message;
+
+    mod message {
+        use super::Message;
+        use crate::errors;
+        use claim::assert_ok;
+        use std::convert::TryFrom;
+
+        #[test]
+        fn calculates_checksum() {
+            assert_eq!(Message::calc_checksum(&[2, 55, 22, 78]), 109);
+        }
+
+        #[test]
+        fn try_from_vec_is_ok() {
+            let v = vec![
+                Message::MESSAGE_START,
+                1,
+                0,
+                4,
+                Message::TOKEN,
+                89,
+                100,
+                78,
+                109,
+                14, // crc
+            ];
+            assert_ok!(Message::try_from(v));
+        }
+        #[test]
+        fn try_from_vec_bad_checksum() {
+            let v = vec![
+                Message::MESSAGE_START,
+                1,
+                0,
+                4,
+                Message::TOKEN,
+                89,
+                100,
+                78,
+                109,
+                0, // crc
+            ];
+            let err = Message::try_from(v).unwrap_err();
+            assert_eq!(err, errors::ChecksumError);
         }
     }
 }

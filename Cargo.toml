@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 serial = "0.4.*"
-avrisp = "0.2.*"
+avrisp = { path=  "/home/lkostka/workspace/avrisp" }
 
 [dev-dependencies]
 claim = "0.4"

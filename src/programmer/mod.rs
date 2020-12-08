@@ -36,12 +36,21 @@ impl fmt::Display for Variant {
 pub trait Programmer {
     // Close and release all resources.
     fn close(self) -> Result<(), ErrorKind>;
-    // Perform full chip erase including EEPROM and flash.
+}
+
+// Perform full chip erase including EEPROM and flash.
+pub trait Erase {
     fn erase(&mut self) -> Result<(), ErrorKind>;
 }
 
-pub trait AVRProgrammer {
+pub trait AVRFuseGet {
     fn get_fuses(&mut self) -> Result<AVRFuse, ErrorKind>;
-    fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, ErrorKind>;
+}
+
+pub trait AVRLockByteGet {
     fn get_lock_byte(&mut self) -> Result<u8, ErrorKind>;
+}
+
+pub trait MCUSignature {
+    fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, ErrorKind>;
 }

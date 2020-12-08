@@ -1,6 +1,6 @@
 use crate::errors;
 use crate::programmer;
-use crate::programmer::{AVRFuse, AVRProgrammer, Programmer};
+use crate::programmer::{AVRFuse, AVRFuseGet, AVRLockByteGet, Erase, MCUSignature, Programmer};
 use avrisp;
 use serial::core::{Error, SerialDevice, SerialPortSettings};
 use std::convert::{TryFrom, TryInto};
@@ -194,7 +194,7 @@ impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "seq: {} len: {} body: {:?}",
+            "sequence number: {} body length: {} body: {:?}",
             self.seq, self.len, self.body,
         )
     }
@@ -246,6 +246,7 @@ impl STK500v2 {
     }
 
     fn write_message(&mut self, msg: Message) -> Result<(), errors::ErrorKind> {
+        println!("writing {}", msg);
         let msg: Vec<u8> = msg.into();
         self.port.write_all(msg.as_slice())?;
         return Ok(());
@@ -258,10 +259,9 @@ impl STK500v2 {
         // Extend to fit body and checksum byte.
         buf.resize(buf.len() + len + 1, 0);
         self.port.read_exact(&mut buf[5..])?;
-        println!("read buffer {:?}", buf);
 
         let msg = Message::try_from(buf)?;
-        println!("{}", msg);
+        println!("got {}", msg);
         return Ok(msg);
     }
 
@@ -303,7 +303,6 @@ impl STK500v2 {
     pub fn read_programmer_signature(&mut self) -> Result<programmer::Variant, errors::ErrorKind> {
         let msg = self.cmd(command::Normal::SignOn.into(), vec![])?;
         let variant = String::from_utf8(msg.body[3..].to_vec()).unwrap();
-        println!("{}", variant);
         match variant.as_ref() {
             "STK500_2" => Ok(programmer::Variant::STK500_V2),
             "AVRISP_2" => Ok(programmer::Variant::AVRISP_2),
@@ -343,30 +342,35 @@ impl IspMode {
         IspMode { prog: prog }
     }
 
-    pub fn read_flash(&mut self, start: usize, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
+    // Does not work on atmega2560.
+    // Requires some kind of different handling when loading memory address
+    pub fn read_flash(&mut self, start: usize, buffer: &mut [u8]) -> Result<(), errors::ErrorKind> {
         // For word-addressed memories (program flash), the Address parameter is the word address.
-        let addr_step = self.prog.specs.flash.page_size / 2;
-        for (addr, buffer) in (start..bytes.len())
-            .step_by(addr_step)
-            .zip(bytes.chunks_exact_mut(self.prog.specs.flash.page_size))
+        let bytes_to_read = self.prog.specs.flash.page_size;
+        // Block size is given in Kwords. Word is 16 bit.
+        let step_by = self.prog.specs.flash.block_size;
+        for (addr, buffer) in (start..buffer.len())
+            .step_by(step_by)
+            .zip(buffer.chunks_exact_mut(bytes_to_read))
         {
-            self.prog.cmd(
-                command::Normal::LoadAddress.into(),
-                (addr as u32).to_be_bytes().to_vec(),
-            )?;
-            let length_bytes = (self.prog.specs.flash.page_size as u16).to_be_bytes();
+            let dst_addr = (addr as u32).to_be_bytes().to_vec();
+            self.prog
+                .cmd(command::Normal::LoadAddress.into(), dst_addr)?;
+            // Read Program Memory command byte #1
+            let read_command = avrisp::READ_FLASH_LOW.0;
+            let to_read_as_bytes = (bytes_to_read as u16).to_be_bytes();
             let mut msg = self.prog.cmd(
                 command::Isp::ReadFlash.into(),
-                vec![length_bytes[0], length_bytes[1], avrisp::READ_FLASH_LOW.0],
+                vec![to_read_as_bytes[0], to_read_as_bytes[1], read_command],
             )?;
             let data_offset = 2;
-            buffer.swap_with_slice(
-                &mut msg.body[data_offset..(self.prog.specs.flash.page_size + data_offset)],
-            );
+            buffer.swap_with_slice(&mut msg.body[data_offset..(bytes_to_read + data_offset)]);
         }
         Ok(())
     }
 
+    // Does not work on atmega2560.
+    // Requires some kind of different handling when loading memory address
     pub fn read_eeprom(&mut self, start: usize, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
         for (addr, buffer) in (start..(bytes.len() + start))
             .step_by(self.prog.specs.eeprom.page_size)
@@ -398,7 +402,7 @@ impl IspMode {
     }
 }
 
-impl Programmer for IspMode {
+impl Erase for IspMode {
     fn erase(&mut self) -> Result<(), errors::ErrorKind> {
         self.prog.cmd(
             command::Isp::ChipErase.into(),
@@ -413,7 +417,13 @@ impl Programmer for IspMode {
         )?;
         Ok(())
     }
+}
 
+impl Programmer for IspMode {
+    // TODO For some unknown reason, programmer does not return valid response.
+    // It misses answer ID
+    // bug in programmers firmware ?
+    // avrdude seems to show in debug mode that it received it correctly.
     fn close(mut self) -> Result<(), errors::ErrorKind> {
         let bytes = vec![self.prog.specs.pre_delay, self.prog.specs.post_delay];
         self.prog.cmd(command::Normal::LeaveIspMode.into(), bytes)?;
@@ -421,7 +431,7 @@ impl Programmer for IspMode {
     }
 }
 
-impl AVRProgrammer for IspMode {
+impl AVRLockByteGet for IspMode {
     fn get_lock_byte(&mut self) -> Result<u8, errors::ErrorKind> {
         let msg = self.prog.cmd(
             command::Isp::ReadLock.into(),
@@ -435,7 +445,19 @@ impl AVRProgrammer for IspMode {
         )?;
         Ok(msg.body[2])
     }
+}
 
+impl AVRFuseGet for IspMode {
+    fn get_fuses(&mut self) -> Result<AVRFuse, errors::ErrorKind> {
+        Ok(AVRFuse {
+            low: self.read_fuse(avrisp::READ_LOW_FUSE)?,
+            high: self.read_fuse(avrisp::READ_HIGH_FUSE)?,
+            extended: self.read_fuse(avrisp::READ_EXTENDED_FUSE)?,
+        })
+    }
+}
+
+impl MCUSignature for IspMode {
     fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, errors::ErrorKind> {
         let mut signature: [u8; 3] = [0; 3];
         for addr in 0..signature.len() {
@@ -452,14 +474,6 @@ impl AVRProgrammer for IspMode {
             signature[addr] = msg.body[2];
         }
         Ok(avrisp::Signature::from(signature))
-    }
-
-    fn get_fuses(&mut self) -> Result<AVRFuse, errors::ErrorKind> {
-        Ok(AVRFuse {
-            low: self.read_fuse(avrisp::READ_LOW_FUSE)?,
-            high: self.read_fuse(avrisp::READ_HIGH_FUSE)?,
-            extended: self.read_fuse(avrisp::READ_EXTENDED_FUSE)?,
-        })
     }
 }
 

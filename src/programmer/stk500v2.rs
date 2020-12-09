@@ -246,7 +246,6 @@ impl STK500v2 {
     }
 
     fn write_message(&mut self, msg: Message) -> Result<(), errors::ErrorKind> {
-        println!("writing {}", msg);
         let msg: Vec<u8> = msg.into();
         self.port.write_all(msg.as_slice())?;
         return Ok(());

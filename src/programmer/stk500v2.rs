@@ -493,11 +493,12 @@ impl MCUSignature for IspMode {
 
 #[cfg(test)]
 mod tests {
-    use super::SequenceGenerator;
+    use super::*;
+    use claim::*;
 
     mod sequence_generator {
 
-        use super::SequenceGenerator;
+        use super::*;
 
         #[test]
         fn overflows_after_255() {
@@ -521,10 +522,7 @@ mod tests {
     use super::Message;
 
     mod message {
-        use super::Message;
-        use crate::errors;
-        use claim::assert_ok;
-        use std::convert::TryFrom;
+        use super::*;
 
         #[test]
         fn calculates_checksum() {

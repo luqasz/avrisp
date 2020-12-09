@@ -519,8 +519,6 @@ mod tests {
         }
     }
 
-    use super::Message;
-
     mod message {
         use super::*;
 

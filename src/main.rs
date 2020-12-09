@@ -3,7 +3,7 @@ pub mod programmer;
 use avrisp;
 use programmer::stk500v2;
 use programmer::stk500v2::IspMode;
-use programmer::{AVRFuseGet, AVRLockByteGet, MCUSignature};
+use programmer::{AVRFuseGet, AVRLockByteGet, MCUSignature, Programmer};
 use std::convert::TryInto;
 use std::fs::File;
 use std::io::prelude::*;
@@ -49,6 +49,13 @@ fn signature<T: MCUSignature>(programmer: &mut T) -> Result<(), errors::ErrorKin
 }
 
 fn dump(bytes: &mut Vec<u8>, name: String) {
+    let found = bytes.iter().rposition(|&x| x != 0);
+    let end = match found {
+        Some(0) => 0,
+        None => return,
+        Some(x) => x + 1,
+    };
+    bytes.truncate(end);
     let mut file = File::create(name).unwrap();
     file.write_all(&bytes).unwrap();
 }

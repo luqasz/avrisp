@@ -259,9 +259,7 @@ impl STK500v2 {
         // Extend to fit body and checksum byte.
         buf.resize(buf.len() + len + 1, 0);
         self.port.read_exact(&mut buf[5..])?;
-
         let msg = Message::try_from(buf)?;
-        println!("got {}", msg);
         return Ok(msg);
     }
 

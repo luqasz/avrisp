@@ -1,5 +1,5 @@
 [package]
-name = "uctool"
+name = "flash"
 version = "0.1.0"
 authors = ["Łukasz Kostka <lukasz.kostka@netng.pl>"]
 edition = "2018"

@@ -6,6 +6,7 @@ use serial::core::{Error, SerialDevice, SerialPortSettings};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::io::prelude::*;
+use std::string::String;
 use std::time::Duration;
 
 #[allow(dead_code)]
@@ -190,12 +191,22 @@ impl TryFrom<Vec<u8>> for Message {
     }
 }
 
+fn to_hex(slice: &[u8]) -> String {
+    let mut hexes = vec![];
+    for i in slice {
+        hexes.push(format!("{:#04x}", i));
+    }
+    return hexes.join(" ");
+}
+
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "sequence number: {} body length: {} body: {:?}",
-            self.seq, self.len, self.body,
+            "sequence number: {} body length: {} body: {}",
+            self.seq,
+            self.len,
+            to_hex(&self.body),
         )
     }
 }

@@ -174,13 +174,16 @@ impl Into<Vec<u8>> for Message {
 }
 
 impl TryFrom<Vec<u8>> for Message {
-    type Error = errors::ChecksumError;
+    type Error = errors::ErrorKind;
 
     fn try_from(mut bytes: Vec<u8>) -> Result<Self, Self::Error> {
         let len = u16::from_be_bytes([bytes[2], bytes[3]]) as u16;
-        let crc: u8 = bytes.pop().unwrap();
+        let crc: u8 = match bytes.pop() {
+            Some(x) => x,
+            None => return Err(errors::ErrorKind::ChecksumError),
+        };
         if crc != Message::calc_checksum(&bytes) {
-            return Err(errors::ChecksumError);
+            return Err(errors::ErrorKind::ChecksumError);
         } else {
             Ok(Message {
                 len: len,
@@ -310,7 +313,7 @@ impl STK500v2 {
 
     pub fn read_programmer_signature(&mut self) -> Result<programmer::Variant, errors::ErrorKind> {
         let msg = self.cmd(command::Normal::SignOn.into(), vec![])?;
-        let variant = String::from_utf8(msg.body[3..].to_vec()).unwrap();
+        let variant = String::from_utf8(msg.body[3..].to_vec())?;
         match variant.as_ref() {
             "STK500_2" => Ok(programmer::Variant::STK500_V2),
             "AVRISP_2" => Ok(programmer::Variant::AVRISP_2),

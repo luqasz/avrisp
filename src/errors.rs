@@ -70,11 +70,18 @@ pub enum ErrorKind {
     SequenceError,
     ChecksumError,
     Io(io::Error),
+    FromUtf8Error,
 }
 
 impl From<io::Error> for ErrorKind {
     fn from(err: io::Error) -> ErrorKind {
         ErrorKind::Io(err)
+    }
+}
+
+impl From<std::string::FromUtf8Error> for ErrorKind {
+    fn from(_: std::string::FromUtf8Error) -> ErrorKind {
+        ErrorKind::FromUtf8Error
     }
 }
 

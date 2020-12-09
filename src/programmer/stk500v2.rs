@@ -501,7 +501,7 @@ mod tests {
 
         #[test]
         fn overflows_after_255() {
-            let mut gen = SequenceGenerator { count: 255 }.skip(1);
+            let mut gen = SequenceGenerator::new().skip(256);
             assert_eq!(gen.next(), Some(0));
         }
 

@@ -562,7 +562,10 @@ mod tests {
                 0, // crc
             ];
             let err = Message::try_from(v).unwrap_err();
-            assert_eq!(err, errors::ChecksumError);
+            match err {
+                errors::ErrorKind::ChecksumError => (),
+                _ => panic!("wrong error returned"),
+            };
         }
     }
 }

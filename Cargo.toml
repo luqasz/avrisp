@@ -1,7 +1,7 @@
 [package]
 name = "flash"
 version = "0.1.0"
-authors = ["Łukasz Kostka <lukasz.kostka@netng.pl>"]
+authors = ["Łukasz Kostka <lukasz.g.kostka@gmail.com>"]
 edition = "2018"
 
 [dependencies]

@@ -51,7 +51,7 @@ fn signature<T: MCUSignature>(programmer: &mut T) -> Result<(), errors::ErrorKin
 }
 
 fn dump(bytes: &mut Vec<u8>, name: String) {
-    let found = bytes.iter().rposition(|&x| x != 0);
+    let found = bytes.iter().rposition(|&x| x != 0xff);
     let end = match found {
         Some(0) => 0,
         None => return,

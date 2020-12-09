@@ -246,10 +246,14 @@ impl STK500v2 {
     pub fn open(port: &String, specs: avrisp::Specs) -> Result<STK500v2, Error> {
         let mut port = serial::open(&port)?;
         let mut settings = port.read_settings()?;
+
         settings.set_baud_rate(serial::Baud115200)?;
         settings.set_parity(serial::ParityNone);
         settings.set_stop_bits(serial::Stop1);
         settings.set_char_size(serial::Bits8);
+        // Do not remove as given programmer may hand at random command.
+        settings.set_flow_control(serial::FlowNone);
+
         port.write_settings(&settings)?;
         port.set_timeout(Duration::from_secs(1))?;
         Ok(STK500v2 {
@@ -434,10 +438,6 @@ impl Erase for IspMode {
 }
 
 impl Programmer for IspMode {
-    // TODO For some unknown reason, programmer does not return valid response.
-    // It misses answer ID
-    // bug in programmers firmware ?
-    // avrdude seems to show in debug mode that it received it correctly.
     fn close(mut self) -> Result<(), errors::ErrorKind> {
         let bytes = vec![self.prog.specs.pre_delay, self.prog.specs.post_delay];
         self.prog.cmd(command::Normal::LeaveIspMode.into(), bytes)?;

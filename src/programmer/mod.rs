@@ -47,8 +47,16 @@ pub trait AVRFuseGet {
     fn get_fuses(&mut self) -> Result<AVRFuse, ErrorKind>;
 }
 
+pub trait AVRFuseSet {
+    fn set_fuses(&mut self, fuses: &AVRFuse) -> Result<AVRFuse, ErrorKind>;
+}
+
 pub trait AVRLockByteGet {
     fn get_lock_byte(&mut self) -> Result<u8, ErrorKind>;
+}
+
+pub trait AVRLockByteSet {
+    fn set_lock_byte(&mut self, byte: u8) -> Result<u8, ErrorKind>;
 }
 
 pub trait MCUSignature {

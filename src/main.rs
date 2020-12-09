@@ -21,10 +21,12 @@ fn main() -> Result<(), errors::ErrorKind> {
     signature(&mut isp)?;
     fuses(&mut isp)?;
     lock_bytes(&mut isp)?;
-    isp.read_eeprom(0, &mut eeprom)?;
-    dump(&mut eeprom, String::from("eeprom.bin"));
+    println!("reading flash");
     isp.read_flash(0, &mut flash)?;
     dump(&mut flash, String::from("flash.bin"));
+    println!("reading eeprom");
+    isp.read_eeprom(0, &mut eeprom)?;
+    dump(&mut eeprom, String::from("eeprom.bin"));
     isp.close()?;
     return Ok(());
 }

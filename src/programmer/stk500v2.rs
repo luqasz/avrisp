@@ -260,6 +260,7 @@ impl STK500v2 {
     }
 
     fn write_message(&mut self, msg: Message) -> Result<(), errors::ErrorKind> {
+        println!("write message {}", msg);
         let msg: Vec<u8> = msg.into();
         self.port.write_all(msg.as_slice())?;
         return Ok(());
@@ -273,10 +274,12 @@ impl STK500v2 {
         buf.resize(buf.len() + len + 1, 0);
         self.port.read_exact(&mut buf[5..])?;
         let msg = Message::try_from(buf)?;
+        println!("got message {}", msg);
         return Ok(msg);
     }
 
     fn cmd(&mut self, cmd: u8, mut body: Vec<u8>) -> Result<Message, errors::ErrorKind> {
+        // This will always succeed
         let seq = self.sequencer.next().unwrap();
         body.insert(0, cmd);
         let sent_msg = Message::new(seq, body);

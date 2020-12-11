@@ -1,5 +1,6 @@
 pub mod stk500v2;
-use crate::errors::ErrorKind;
+use crate::errors;
+use std::convert::TryFrom;
 use std::fmt;
 
 pub struct AVRFuse {
@@ -33,32 +34,43 @@ impl fmt::Display for Variant {
     }
 }
 
+impl TryFrom<String> for Variant {
+    type Error = errors::UnknownProgrammer;
+    fn try_from(string: String) -> Result<Self, Self::Error> {
+        match string.as_ref() {
+            "STK500_2" => Ok(Variant::STK500_V2),
+            "AVRISP_2" => Ok(Variant::AVRISP_2),
+            _ => Err(errors::UnknownProgrammer {}),
+        }
+    }
+}
+
 pub trait Programmer {
     // Close and release all resources.
-    fn close(self) -> Result<(), ErrorKind>;
+    fn close(self) -> Result<(), errors::ErrorKind>;
 }
 
 // Perform full chip erase including EEPROM and flash.
 pub trait Erase {
-    fn erase(&mut self) -> Result<(), ErrorKind>;
+    fn erase(&mut self) -> Result<(), errors::ErrorKind>;
 }
 
 pub trait AVRFuseGet {
-    fn get_fuses(&mut self) -> Result<AVRFuse, ErrorKind>;
+    fn get_fuses(&mut self) -> Result<AVRFuse, errors::ErrorKind>;
 }
 
 pub trait AVRFuseSet {
-    fn set_fuses(&mut self, fuses: &AVRFuse) -> Result<AVRFuse, ErrorKind>;
+    fn set_fuses(&mut self, fuses: &AVRFuse) -> Result<AVRFuse, errors::ErrorKind>;
 }
 
 pub trait AVRLockByteGet {
-    fn get_lock_byte(&mut self) -> Result<u8, ErrorKind>;
+    fn get_lock_byte(&mut self) -> Result<u8, errors::ErrorKind>;
 }
 
 pub trait AVRLockByteSet {
-    fn set_lock_byte(&mut self, byte: u8) -> Result<u8, ErrorKind>;
+    fn set_lock_byte(&mut self, byte: u8) -> Result<u8, errors::ErrorKind>;
 }
 
 pub trait MCUSignature {
-    fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, ErrorKind>;
+    fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, errors::ErrorKind>;
 }

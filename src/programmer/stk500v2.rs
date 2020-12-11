@@ -138,6 +138,13 @@ struct Message {
 impl Message {
     const MESSAGE_START: u8 = 0x1B;
     const TOKEN: u8 = 0x0E;
+    const HEADER_SIZE: usize = 5;
+    const CHECKSUM_SIZE: usize = 1;
+    const BODY_START_POSITION: usize = 5;
+    const LEN_BYTE_0_POSITION: usize = 2;
+    const LEN_BYTE_1_POSITION: usize = 3;
+    const SEQ_PSITION: usize = 1;
+    const MAX_SIZE: usize = 275 + Message::CHECKSUM_SIZE + Message::HEADER_SIZE;
 
     fn new(seq: u8, body: Vec<u8>) -> Self {
         Message {
@@ -177,7 +184,10 @@ impl TryFrom<Vec<u8>> for Message {
     type Error = errors::ErrorKind;
 
     fn try_from(mut bytes: Vec<u8>) -> Result<Self, Self::Error> {
-        let len = u16::from_be_bytes([bytes[2], bytes[3]]) as u16;
+        let len = u16::from_be_bytes([
+            bytes[Message::LEN_BYTE_0_POSITION],
+            bytes[Message::LEN_BYTE_1_POSITION],
+        ]) as u16;
         let crc: u8 = match bytes.pop() {
             Some(x) => x,
             None => return Err(errors::ErrorKind::ChecksumError),
@@ -187,8 +197,10 @@ impl TryFrom<Vec<u8>> for Message {
         } else {
             Ok(Message {
                 len: len,
-                body: bytes[5..=(bytes.len() - 1) as usize].to_vec(),
-                seq: bytes[1],
+                body: bytes[Message::BODY_START_POSITION
+                    ..=(bytes.len() - Message::CHECKSUM_SIZE) as usize]
+                    .to_vec(),
+                seq: bytes[Message::SEQ_PSITION],
             })
         }
     }
@@ -271,12 +283,16 @@ impl STK500v2 {
     }
 
     fn read_message(&mut self) -> Result<Message, errors::ErrorKind> {
-        let mut buf = vec![0u8; 5];
+        let mut buf = vec![0u8; Message::HEADER_SIZE];
         self.port.read_exact(&mut buf)?;
-        let len = u16::from_be_bytes([buf[2], buf[3]]) as usize;
+        let len = u16::from_be_bytes([
+            buf[Message::LEN_BYTE_0_POSITION],
+            buf[Message::LEN_BYTE_1_POSITION],
+        ]) as usize;
         // Extend to fit body and checksum byte.
-        buf.resize(buf.len() + len + 1, 0);
-        self.port.read_exact(&mut buf[5..])?;
+        buf.resize(buf.len() + len + Message::CHECKSUM_SIZE, 0);
+        self.port
+            .read_exact(&mut buf[Message::BODY_START_POSITION..])?;
         let msg = Message::try_from(buf)?;
         println!("got message {}", msg);
         return Ok(msg);

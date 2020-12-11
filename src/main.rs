@@ -16,7 +16,6 @@ fn main() -> Result<(), errors::ErrorKind> {
     let port = "/dev/serial/by-id/usb-microSENSE_USB_AVR_ISP_II_FT-STK500v2_FTWAKGHJ-if00-port0"
         .to_string();
     let mut stk = stk500v2::STK500v2::open(&port, SPECS).unwrap();
-    stk.init()?;
     let mut isp: IspMode = stk.try_into()?;
     signature(&mut isp)?;
     fuses(&mut isp)?;

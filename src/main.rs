@@ -16,15 +16,14 @@ fn main() -> Result<(), errors::ErrorKind> {
     let port = "/dev/serial/by-id/usb-microSENSE_USB_AVR_ISP_II_FT-STK500v2_FTWAKGHJ-if00-port0"
         .to_string();
     let mut stk = stk500v2::STK500v2::open(&port, SPECS).unwrap();
-    println!("Programmer signature: {}", stk.read_programmer_signature()?);
+    stk.init()?;
     let mut isp: IspMode = stk.try_into()?;
     signature(&mut isp)?;
     fuses(&mut isp)?;
     lock_bytes(&mut isp)?;
-    println!("reading flash");
     isp.read_flash(0, &mut flash)?;
+    truncate(&mut flash);
     dump(&mut flash, String::from("flash.bin"));
-    println!("reading eeprom");
     isp.read_eeprom(0, &mut eeprom)?;
     dump(&mut eeprom, String::from("eeprom.bin"));
     isp.close()?;
@@ -50,7 +49,7 @@ fn signature<T: MCUSignature>(programmer: &mut T) -> Result<(), errors::ErrorKin
     Ok(())
 }
 
-fn dump(bytes: &mut Vec<u8>, name: String) {
+fn truncate(bytes: &mut Vec<u8>) {
     let found = bytes.iter().rposition(|&x| x != 0xff);
     let end = match found {
         Some(0) => 0,
@@ -58,6 +57,9 @@ fn dump(bytes: &mut Vec<u8>, name: String) {
         Some(x) => x + 1,
     };
     bytes.truncate(end);
+}
+
+fn dump(bytes: &mut Vec<u8>, name: String) {
     let mut file = File::create(name).unwrap();
     file.write_all(&bytes).unwrap();
 }

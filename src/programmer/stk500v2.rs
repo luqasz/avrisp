@@ -353,10 +353,6 @@ impl STK500v2 {
         let variant = String::from_utf8(msg.body[3..].to_vec())?;
         Ok(programmer::Variant::try_from(variant)?)
     }
-            "AVRISP_2" => Ok(programmer::Variant::AVRISP_2),
-            _ => panic!("Unknown programmer type"),
-        }
-    }
 }
 
 impl TryInto<IspMode> for STK500v2 {

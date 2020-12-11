@@ -321,8 +321,8 @@ impl STK500v2 {
     pub fn read_programmer_signature(&mut self) -> Result<programmer::Variant, errors::ErrorKind> {
         let msg = self.cmd(command::Normal::SignOn.into(), vec![])?;
         let variant = String::from_utf8(msg.body[3..].to_vec())?;
-        match variant.as_ref() {
-            "STK500_2" => Ok(programmer::Variant::STK500_V2),
+        Ok(programmer::Variant::try_from(variant)?)
+    }
             "AVRISP_2" => Ok(programmer::Variant::AVRISP_2),
             _ => panic!("Unknown programmer type"),
         }

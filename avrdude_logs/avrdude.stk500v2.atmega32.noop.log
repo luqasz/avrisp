@@ -1,0 +1,957 @@
+
+avrdude: Version 6.3-20171130
+         Copyright (c) 2000-2005 Brian Dean, http://www.bdmicro.com/
+         Copyright (c) 2007-2014 Joerg Wunsch
+
+         System wide configuration file is "/etc/avrdude.conf"
+         User configuration file is "/home/lkostka/.avrduderc"
+         User configuration file does not exist or is not a regular file, skipping
+
+         Using Port                    : /dev/ttyUSB2
+         Using Programmer              : stk500v2
+STK500V2: stk500v2_open()
+STK500V2: stk500v2_getsync()
+STK500V2: stk500v2_send(0x1b 0x01 0x00 0x01 0x0e 0x01 0x14 , 7)                             # SIGN_ON
+avrdude: Send: . [1b] . [01] . [00] . [01] . [0e] . [01] . [14]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [01]
+0x01 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [0b]
+0x0b hoping for size MSB... msg is 11 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [01]
+0x01 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [08]
+0x08 avrdude: Recv: S [53]
+0x53 avrdude: Recv: T [54]
+0x54 avrdude: Recv: K [4b]
+0x4b avrdude: Recv: 5 [35]
+0x35 avrdude: Recv: 0 [30]
+0x30 avrdude: Recv: 0 [30]
+0x30 avrdude: Recv: _ [5f]
+0x5f avrdude: Recv: 2 [32]
+0x32 avrdude: Recv: . [02]
+0x02
+avrdude: stk500v2_getsync(): found STK500 programmer
+         AVR Part                      : ATmega32
+         Chip Erase delay              : 9000 us
+         PAGEL                         : PD7
+         BS2                           : PA0
+         RESET disposition             : dedicated
+         RETRY pulse                   : SCK
+         serial program mode           : yes
+         parallel program mode         : yes
+         Timeout                       : 200
+         StabDelay                     : 100
+         CmdexeDelay                   : 25
+         SyncLoops                     : 32
+         ByteDelay                     : 0
+         PollIndex                     : 3
+         PollValue                     : 0x53
+         Memory Detail                 :
+
+                                  Block Poll               Page                       Polled
+           Memory Type Mode Delay Size  Indx Paged  Size   Size #Pages MinW  MaxW   ReadBack
+           ----------- ---- ----- ----- ---- ------ ------ ---- ------ ----- ----- ---------
+           eeprom         4    10    64    0 no       1024    4      0  9000  9000 0xff 0xff
+             Memory Ops:
+               Oeration     Inst Bit  Bit Type  Bitno  Value
+               -----------  --------  --------  -----  -----
+               READ               31     VALUE      7      1
+                                  30     VALUE      6      0
+                                  29     VALUE      5      1
+                                  28     VALUE      4      0
+                                  27     VALUE      3      0
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21    IGNORE      5      0
+                                  20    IGNORE      4      0
+                                  19    IGNORE      3      0
+                                  18    IGNORE      2      0
+                                  17   ADDRESS      9      0
+                                  16   ADDRESS      8      0
+                                  15   ADDRESS      7      0
+                                  14   ADDRESS      6      0
+                                  13   ADDRESS      5      0
+                                  12   ADDRESS      4      0
+                                  11   ADDRESS      3      0
+                                  10   ADDRESS      2      0
+                                   9   ADDRESS      1      0
+                                   8   ADDRESS      0      0
+                                   7    OUTPUT      7      0
+                                   6    OUTPUT      6      0
+                                   5    OUTPUT      5      0
+                                   4    OUTPUT      4      0
+                                   3    OUTPUT      3      0
+                                   2    OUTPUT      2      0
+                                   1    OUTPUT      1      0
+                                   0    OUTPUT      0      0
+               WRITE              31     VALUE      7      1
+                                  30     VALUE      6      1
+                                  29     VALUE      5      0
+                                  28     VALUE      4      0
+                                  27     VALUE      3      0
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21    IGNORE      5      0
+                                  20    IGNORE      4      0
+                                  19    IGNORE      3      0
+                                  18    IGNORE      2      0
+                                  17   ADDRESS      9      0
+                                  16   ADDRESS      8      0
+                                  15   ADDRESS      7      0
+                                  14   ADDRESS      6      0
+                                  13   ADDRESS      5      0
+                                  12   ADDRESS      4      0
+                                  11   ADDRESS      3      0
+                                  10   ADDRESS      2      0
+                                   9   ADDRESS      1      0
+                                   8   ADDRESS      0      0
+                                   7     INPUT      7      0
+                                   6     INPUT      6      0
+                                   5     INPUT      5      0
+                                   4     INPUT      4      0
+                                   3     INPUT      3      0
+                                   2     INPUT      2      0
+                                   1     INPUT      1      0
+                                   0     INPUT      0      0
+               LOADPAGE_LO        31     VALUE      7      1
+                                  30     VALUE      6      1
+                                  29     VALUE      5      0
+                                  28     VALUE      4      0
+                                  27     VALUE      3      0
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      1
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21     VALUE      5      0
+                                  20     VALUE      4      0
+                                  19     VALUE      3      0
+                                  18     VALUE      2      0
+                                  17     VALUE      1      0
+                                  16     VALUE      0      0
+                                  15     VALUE      7      0
+                                  14     VALUE      6      0
+                                  13     VALUE      5      0
+                                  12     VALUE      4      0
+                                  11     VALUE      3      0
+                                  10     VALUE      2      0
+                                   9   ADDRESS      1      0
+                                   8   ADDRESS      0      0
+                                   7     INPUT      7      0
+                                   6     INPUT      6      0
+                                   5     INPUT      5      0
+                                   4     INPUT      4      0
+                                   3     INPUT      3      0
+                                   2     INPUT      2      0
+                                   1     INPUT      1      0
+                                   0     INPUT      0      0
+               WRITEPAGE          31     VALUE      7      1
+                                  30     VALUE      6      1
+                                  29     VALUE      5      0
+                                  28     VALUE      4      0
+                                  27     VALUE      3      0
+                                  26     VALUE      2      0
+                                  25     VALUE      1      1
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21    IGNORE      5      0
+                                  20    IGNORE      4      0
+                                  19    IGNORE      3      0
+                                  18    IGNORE      2      0
+                                  17   ADDRESS      9      0
+                                  16   ADDRESS      8      0
+                                  15   ADDRESS      7      0
+                                  14   ADDRESS      6      0
+                                  13   ADDRESS      5      0
+                                  12   ADDRESS      4      0
+                                  11   ADDRESS      3      0
+                                  10   ADDRESS      2      0
+                                   9     VALUE      1      0
+                                   8     VALUE      0      0
+                                   7    IGNORE      7      0
+                                   6    IGNORE      6      0
+                                   5    IGNORE      5      0
+                                   4    IGNORE      4      0
+                                   3    IGNORE      3      0
+                                   2    IGNORE      2      0
+                                   1    IGNORE      1      0
+                                   0    IGNORE      0      0
+                                  Block Poll               Page                       Polled
+           Memory Type Mode Delay Size  Indx Paged  Size   Size #Pages MinW  MaxW   ReadBack
+           ----------- ---- ----- ----- ---- ------ ------ ---- ------ ----- ----- ---------
+           flash         33     6    64    0 yes     32768  128    256  4500  4500 0xff 0xff
+             Memory Ops:
+               Oeration     Inst Bit  Bit Type  Bitno  Value
+               -----------  --------  --------  -----  -----
+               READ_LO            31     VALUE      7      0
+                                  30     VALUE      6      0
+                                  29     VALUE      5      1
+                                  28     VALUE      4      0
+                                  27     VALUE      3      0
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21   ADDRESS     13      0
+                                  20   ADDRESS     12      0
+                                  19   ADDRESS     11      0
+                                  18   ADDRESS     10      0
+                                  17   ADDRESS      9      0
+                                  16   ADDRESS      8      0
+                                  15   ADDRESS      7      0
+                                  14   ADDRESS      6      0
+                                  13   ADDRESS      5      0
+                                  12   ADDRESS      4      0
+                                  11   ADDRESS      3      0
+                                  10   ADDRESS      2      0
+                                   9   ADDRESS      1      0
+                                   8   ADDRESS      0      0
+                                   7    OUTPUT      7      0
+                                   6    OUTPUT      6      0
+                                   5    OUTPUT      5      0
+                                   4    OUTPUT      4      0
+                                   3    OUTPUT      3      0
+                                   2    OUTPUT      2      0
+                                   1    OUTPUT      1      0
+                                   0    OUTPUT      0      0
+               READ_HI            31     VALUE      7      0
+                                  30     VALUE      6      0
+                                  29     VALUE      5      1
+                                  28     VALUE      4      0
+                                  27     VALUE      3      1
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21   ADDRESS     13      0
+                                  20   ADDRESS     12      0
+                                  19   ADDRESS     11      0
+                                  18   ADDRESS     10      0
+                                  17   ADDRESS      9      0
+                                  16   ADDRESS      8      0
+                                  15   ADDRESS      7      0
+                                  14   ADDRESS      6      0
+                                  13   ADDRESS      5      0
+                                  12   ADDRESS      4      0
+                                  11   ADDRESS      3      0
+                                  10   ADDRESS      2      0
+                                   9   ADDRESS      1      0
+                                   8   ADDRESS      0      0
+                                   7    OUTPUT      7      0
+                                   6    OUTPUT      6      0
+                                   5    OUTPUT      5      0
+                                   4    OUTPUT      4      0
+                                   3    OUTPUT      3      0
+                                   2    OUTPUT      2      0
+                                   1    OUTPUT      1      0
+                                   0    OUTPUT      0      0
+               LOADPAGE_LO        31     VALUE      7      0
+                                  30     VALUE      6      1
+                                  29     VALUE      5      0
+                                  28     VALUE      4      0
+                                  27     VALUE      3      0
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21    IGNORE      5      0
+                                  20    IGNORE      4      0
+                                  19    IGNORE      3      0
+                                  18    IGNORE      2      0
+                                  17    IGNORE      1      0
+                                  16    IGNORE      0      0
+                                  15    IGNORE      7      0
+                                  14    IGNORE      6      0
+                                  13   ADDRESS      5      0
+                                  12   ADDRESS      4      0
+                                  11   ADDRESS      3      0
+                                  10   ADDRESS      2      0
+                                   9   ADDRESS      1      0
+                                   8   ADDRESS      0      0
+                                   7     INPUT      7      0
+                                   6     INPUT      6      0
+                                   5     INPUT      5      0
+                                   4     INPUT      4      0
+                                   3     INPUT      3      0
+                                   2     INPUT      2      0
+                                   1     INPUT      1      0
+                                   0     INPUT      0      0
+               LOADPAGE_HI        31     VALUE      7      0
+                                  30     VALUE      6      1
+                                  29     VALUE      5      0
+                                  28     VALUE      4      0
+                                  27     VALUE      3      1
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21    IGNORE      5      0
+                                  20    IGNORE      4      0
+                                  19    IGNORE      3      0
+                                  18    IGNORE      2      0
+                                  17    IGNORE      1      0
+                                  16    IGNORE      0      0
+                                  15    IGNORE      7      0
+                                  14    IGNORE      6      0
+                                  13   ADDRESS      5      0
+                                  12   ADDRESS      4      0
+                                  11   ADDRESS      3      0
+                                  10   ADDRESS      2      0
+                                   9   ADDRESS      1      0
+                                   8   ADDRESS      0      0
+                                   7     INPUT      7      0
+                                   6     INPUT      6      0
+                                   5     INPUT      5      0
+                                   4     INPUT      4      0
+                                   3     INPUT      3      0
+                                   2     INPUT      2      0
+                                   1     INPUT      1      0
+                                   0     INPUT      0      0
+               WRITEPAGE          31     VALUE      7      0
+                                  30     VALUE      6      1
+                                  29     VALUE      5      0
+                                  28     VALUE      4      0
+                                  27     VALUE      3      1
+                                  26     VALUE      2      1
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21   ADDRESS     13      0
+                                  20   ADDRESS     12      0
+                                  19   ADDRESS     11      0
+                                  18   ADDRESS     10      0
+                                  17   ADDRESS      9      0
+                                  16   ADDRESS      8      0
+                                  15   ADDRESS      7      0
+                                  14   ADDRESS      6      0
+                                  13    IGNORE      5      0
+                                  12    IGNORE      4      0
+                                  11    IGNORE      3      0
+                                  10    IGNORE      2      0
+                                   9    IGNORE      1      0
+                                   8    IGNORE      0      0
+                                   7    IGNORE      7      0
+                                   6    IGNORE      6      0
+                                   5    IGNORE      5      0
+                                   4    IGNORE      4      0
+                                   3    IGNORE      3      0
+                                   2    IGNORE      2      0
+                                   1    IGNORE      1      0
+                                   0    IGNORE      0      0
+                                  Block Poll               Page                       Polled
+           Memory Type Mode Delay Size  Indx Paged  Size   Size #Pages MinW  MaxW   ReadBack
+           ----------- ---- ----- ----- ---- ------ ------ ---- ------ ----- ----- ---------
+           lfuse          0     0     0    0 no          1    0      0  2000  2000 0x00 0x00
+             Memory Ops:
+               Oeration     Inst Bit  Bit Type  Bitno  Value
+               -----------  --------  --------  -----  -----
+               READ               31     VALUE      7      0
+                                  30     VALUE      6      1
+                                  29     VALUE      5      0
+                                  28     VALUE      4      1
+                                  27     VALUE      3      0
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21     VALUE      5      0
+                                  20     VALUE      4      0
+                                  19     VALUE      3      0
+                                  18     VALUE      2      0
+                                  17     VALUE      1      0
+                                  16     VALUE      0      0
+                                  15    IGNORE      7      0
+                                  14    IGNORE      6      0
+                                  13    IGNORE      5      0
+                                  12    IGNORE      4      0
+                                  11    IGNORE      3      0
+                                  10    IGNORE      2      0
+                                   9    IGNORE      1      0
+                                   8    IGNORE      0      0
+                                   7    OUTPUT      7      0
+                                   6    OUTPUT      6      0
+                                   5    OUTPUT      5      0
+                                   4    OUTPUT      4      0
+                                   3    OUTPUT      3      0
+                                   2    OUTPUT      2      0
+                                   1    OUTPUT      1      0
+                                   0    OUTPUT      0      0
+               WRITE              31     VALUE      7      1
+                                  30     VALUE      6      0
+                                  29     VALUE      5      1
+                                  28     VALUE      4      0
+                                  27     VALUE      3      1
+                                  26     VALUE      2      1
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      1
+                                  22     VALUE      6      0
+                                  21     VALUE      5      1
+                                  20     VALUE      4      0
+                                  19     VALUE      3      0
+                                  18     VALUE      2      0
+                                  17     VALUE      1      0
+                                  16     VALUE      0      0
+                                  15    IGNORE      7      0
+                                  14    IGNORE      6      0
+                                  13    IGNORE      5      0
+                                  12    IGNORE      4      0
+                                  11    IGNORE      3      0
+                                  10    IGNORE      2      0
+                                   9    IGNORE      1      0
+                                   8    IGNORE      0      0
+                                   7     INPUT      7      0
+                                   6     INPUT      6      0
+                                   5     INPUT      5      0
+                                   4     INPUT      4      0
+                                   3     INPUT      3      0
+                                   2     INPUT      2      0
+                                   1     INPUT      1      0
+                                   0     INPUT      0      0
+                                  Block Poll               Page                       Polled
+           Memory Type Mode Delay Size  Indx Paged  Size   Size #Pages MinW  MaxW   ReadBack
+           ----------- ---- ----- ----- ---- ------ ------ ---- ------ ----- ----- ---------
+           hfuse          0     0     0    0 no          1    0      0  2000  2000 0x00 0x00
+             Memory Ops:
+               Oeration     Inst Bit  Bit Type  Bitno  Value
+               -----------  --------  --------  -----  -----
+               READ               31     VALUE      7      0
+                                  30     VALUE      6      1
+                                  29     VALUE      5      0
+                                  28     VALUE      4      1
+                                  27     VALUE      3      1
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21     VALUE      5      0
+                                  20     VALUE      4      0
+                                  19     VALUE      3      1
+                                  18     VALUE      2      0
+                                  17     VALUE      1      0
+                                  16     VALUE      0      0
+                                  15    IGNORE      7      0
+                                  14    IGNORE      6      0
+                                  13    IGNORE      5      0
+                                  12    IGNORE      4      0
+                                  11    IGNORE      3      0
+                                  10    IGNORE      2      0
+                                   9    IGNORE      1      0
+                                   8    IGNORE      0      0
+                                   7    OUTPUT      7      0
+                                   6    OUTPUT      6      0
+                                   5    OUTPUT      5      0
+                                   4    OUTPUT      4      0
+                                   3    OUTPUT      3      0
+                                   2    OUTPUT      2      0
+                                   1    OUTPUT      1      0
+                                   0    OUTPUT      0      0
+               WRITE              31     VALUE      7      1
+                                  30     VALUE      6      0
+                                  29     VALUE      5      1
+                                  28     VALUE      4      0
+                                  27     VALUE      3      1
+                                  26     VALUE      2      1
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      1
+                                  22     VALUE      6      0
+                                  21     VALUE      5      1
+                                  20     VALUE      4      0
+                                  19     VALUE      3      1
+                                  18     VALUE      2      0
+                                  17     VALUE      1      0
+                                  16     VALUE      0      0
+                                  15    IGNORE      7      0
+                                  14    IGNORE      6      0
+                                  13    IGNORE      5      0
+                                  12    IGNORE      4      0
+                                  11    IGNORE      3      0
+                                  10    IGNORE      2      0
+                                   9    IGNORE      1      0
+                                   8    IGNORE      0      0
+                                   7     INPUT      7      0
+                                   6     INPUT      6      0
+                                   5     INPUT      5      0
+                                   4     INPUT      4      0
+                                   3     INPUT      3      0
+                                   2     INPUT      2      0
+                                   1     INPUT      1      0
+                                   0     INPUT      0      0
+                                  Block Poll               Page                       Polled
+           Memory Type Mode Delay Size  Indx Paged  Size   Size #Pages MinW  MaxW   ReadBack
+           ----------- ---- ----- ----- ---- ------ ------ ---- ------ ----- ----- ---------
+           lock           0     0     0    0 no          1    0      0  2000  2000 0x00 0x00
+             Memory Ops:
+               Oeration     Inst Bit  Bit Type  Bitno  Value
+               -----------  --------  --------  -----  -----
+               READ               31     VALUE      7      0
+                                  30     VALUE      6      1
+                                  29     VALUE      5      0
+                                  28     VALUE      4      1
+                                  27     VALUE      3      1
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21     VALUE      5      0
+                                  20     VALUE      4      0
+                                  19     VALUE      3      0
+                                  18     VALUE      2      0
+                                  17     VALUE      1      0
+                                  16     VALUE      0      0
+                                  15    IGNORE      7      0
+                                  14    IGNORE      6      0
+                                  13    IGNORE      5      0
+                                  12    IGNORE      4      0
+                                  11    IGNORE      3      0
+                                  10    IGNORE      2      0
+                                   9    IGNORE      1      0
+                                   8    IGNORE      0      0
+                                   7    OUTPUT      7      0
+                                   6    OUTPUT      6      0
+                                   5    OUTPUT      5      0
+                                   4    OUTPUT      4      0
+                                   3    OUTPUT      3      0
+                                   2    OUTPUT      2      0
+                                   1    OUTPUT      1      0
+                                   0    OUTPUT      0      0
+               WRITE              31     VALUE      7      1
+                                  30     VALUE      6      0
+                                  29     VALUE      5      1
+                                  28     VALUE      4      0
+                                  27     VALUE      3      1
+                                  26     VALUE      2      1
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      1
+                                  22     VALUE      6      1
+                                  21     VALUE      5      1
+                                  20    IGNORE      4      0
+                                  19    IGNORE      3      0
+                                  18    IGNORE      2      0
+                                  17    IGNORE      1      0
+                                  16    IGNORE      0      0
+                                  15    IGNORE      7      0
+                                  14    IGNORE      6      0
+                                  13    IGNORE      5      0
+                                  12    IGNORE      4      0
+                                  11    IGNORE      3      0
+                                  10    IGNORE      2      0
+                                   9    IGNORE      1      0
+                                   8    IGNORE      0      0
+                                   7     VALUE      7      1
+                                   6     VALUE      6      1
+                                   5     INPUT      5      0
+                                   4     INPUT      4      0
+                                   3     INPUT      3      0
+                                   2     INPUT      2      0
+                                   1     INPUT      1      0
+                                   0     INPUT      0      0
+                                  Block Poll               Page                       Polled
+           Memory Type Mode Delay Size  Indx Paged  Size   Size #Pages MinW  MaxW   ReadBack
+           ----------- ---- ----- ----- ---- ------ ------ ---- ------ ----- ----- ---------
+           signature      0     0     0    0 no          3    0      0     0     0 0x00 0x00
+             Memory Ops:
+               Oeration     Inst Bit  Bit Type  Bitno  Value
+               -----------  --------  --------  -----  -----
+               READ               31     VALUE      7      0
+                                  30     VALUE      6      0
+                                  29     VALUE      5      1
+                                  28     VALUE      4      1
+                                  27     VALUE      3      0
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23    IGNORE      7      0
+                                  22    IGNORE      6      0
+                                  21    IGNORE      5      0
+                                  20    IGNORE      4      0
+                                  19    IGNORE      3      0
+                                  18    IGNORE      2      0
+                                  17    IGNORE      1      0
+                                  16    IGNORE      0      0
+                                  15    IGNORE      7      0
+                                  14    IGNORE      6      0
+                                  13    IGNORE      5      0
+                                  12    IGNORE      4      0
+                                  11    IGNORE      3      0
+                                  10    IGNORE      2      0
+                                   9   ADDRESS      1      0
+                                   8   ADDRESS      0      0
+                                   7    OUTPUT      7      0
+                                   6    OUTPUT      6      0
+                                   5    OUTPUT      5      0
+                                   4    OUTPUT      4      0
+                                   3    OUTPUT      3      0
+                                   2    OUTPUT      2      0
+                                   1    OUTPUT      1      0
+                                   0    OUTPUT      0      0
+                                  Block Poll               Page                       Polled
+           Memory Type Mode Delay Size  Indx Paged  Size   Size #Pages MinW  MaxW   ReadBack
+           ----------- ---- ----- ----- ---- ------ ------ ---- ------ ----- ----- ---------
+           calibration    0     0     0    0 no          4    0      0     0     0 0x00 0x00
+             Memory Ops:
+               Oeration     Inst Bit  Bit Type  Bitno  Value
+               -----------  --------  --------  -----  -----
+               READ               31     VALUE      7      0
+                                  30     VALUE      6      0
+                                  29     VALUE      5      1
+                                  28     VALUE      4      1
+                                  27     VALUE      3      1
+                                  26     VALUE      2      0
+                                  25     VALUE      1      0
+                                  24     VALUE      0      0
+                                  23     VALUE      7      0
+                                  22     VALUE      6      0
+                                  21    IGNORE      5      0
+                                  20    IGNORE      4      0
+                                  19    IGNORE      3      0
+                                  18    IGNORE      2      0
+                                  17    IGNORE      1      0
+                                  16    IGNORE      0      0
+                                  15     VALUE      7      0
+                                  14     VALUE      6      0
+                                  13     VALUE      5      0
+                                  12     VALUE      4      0
+                                  11     VALUE      3      0
+                                  10     VALUE      2      0
+                                   9   ADDRESS      1      0
+                                   8   ADDRESS      0      0
+                                   7    OUTPUT      7      0
+                                   6    OUTPUT      6      0
+                                   5    OUTPUT      5      0
+                                   4    OUTPUT      4      0
+                                   3    OUTPUT      3      0
+                                   2    OUTPUT      2      0
+                                   1    OUTPUT      1      0
+                                   0    OUTPUT      0      0
+
+         Programmer Type : STK500V2
+         Description     : Atmel STK500 Version 2.x firmware
+         Programmer Model: STK500
+STK500V2: stk500v2_command(0x03 0x90 , 2)
+STK500V2: stk500v2_send(0x1b 0x02 0x00 0x02 0x0e 0x03 0x90 0x86 , 8)                    # get hw version
+avrdude: Send: . [1b] . [02] . [00] . [02] . [0e] . [03] . [90] . [86]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [02]
+0x02 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [03]
+0x03 hoping for size MSB... msg is 3 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [03]
+0x03 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [01]
+0x01 avrdude: Recv: . [16]
+0x16
+ = 9
+STK500V2: stk500v2_command(0x03 0x91 , 2)
+STK500V2: stk500v2_send(0x1b 0x03 0x00 0x02 0x0e 0x03 0x91 0x86 , 8)                    # get sw version major
+avrdude: Send: . [1b] . [03] . [00] . [02] . [0e] . [03] . [91] . [86]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [03]
+0x03 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [03]
+0x03 hoping for size MSB... msg is 3 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [03]
+0x03 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [02]
+0x02 avrdude: Recv: . [14]
+0x14
+ = 9
+STK500V2: stk500v2_command(0x03 0x92 , 2)
+STK500V2: stk500v2_send(0x1b 0x04 0x00 0x02 0x0e 0x03 0x92 0x82 , 8)                # get sw version minor
+avrdude: Send: . [1b] . [04] . [00] . [02] . [0e] . [03] . [92] . [82]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [04]
+0x04 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [03]
+0x03 hoping for size MSB... msg is 3 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [03]
+0x03 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [10]
+0x10 avrdude: Recv: . [01]
+0x01
+ = 9
+         Hardware Version: 1
+         Firmware Version Master : 2.16
+STK500V2: stk500v2_command(0x03 0x9a , 2)
+STK500V2: stk500v2_send(0x1b 0x05 0x00 0x02 0x0e 0x03 0x9a 0x8b , 8)                    # get topcard detect
+avrdude: Send: . [1b] . [05] . [00] . [02] . [0e] . [03] . [9a] . [8b]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [05]
+0x05 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [03]
+0x03 hoping for size MSB... msg is 3 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [03]
+0x03 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [8c]
+0x8c avrdude: Recv: . [9c]
+0x9c
+ = 9
+         Topcard         : Unknown
+STK500V2: stk500v2_command(0x03 0x94 , 2)
+STK500V2: stk500v2_send(0x1b 0x06 0x00 0x02 0x0e 0x03 0x94 0x86 , 8)                        # get vtarget
+avrdude: Send: . [1b] . [06] . [00] . [02] . [0e] . [03] . [94] . [86]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [06]
+0x06 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [03]
+0x03 hoping for size MSB... msg is 3 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [03]
+0x03 avrdude: Recv: . [00]
+0x00 avrdude: Recv: 2 [32]
+0x32 avrdude: Recv: ! [21]
+0x21
+ = 9
+         Vtarget         : 5.0 V
+STK500V2: stk500v2_command(0x03 0x98 , 2)
+STK500V2: stk500v2_send(0x1b 0x07 0x00 0x02 0x0e 0x03 0x98 0x8b , 8)                    # get sck duration
+avrdude: Send: . [1b] . [07] . [00] . [02] . [0e] . [03] . [98] . [8b]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [07]
+0x07 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [03]
+0x03 hoping for size MSB... msg is 3 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [03]
+0x03 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [01]
+0x01 avrdude: Recv: . [13]
+0x13
+ = 9
+STK500V2: stk500v2_command(0x03 0x95 , 2)
+STK500V2: stk500v2_send(0x1b 0x08 0x00 0x02 0x0e 0x03 0x95 0x89 , 8)                    # get vadjust
+avrdude: Send: . [1b] . [08] . [00] . [02] . [0e] . [03] . [95] . [89]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [08]
+0x08 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [03]
+0x03 hoping for size MSB... msg is 3 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [03]
+0x03 avrdude: Recv: . [00]
+0x00 avrdude: Recv: 2 [32]
+0x32 avrdude: Recv: / [2f]
+0x2f
+ = 9
+STK500V2: stk500v2_command(0x03 0x96 , 2)
+STK500V2: stk500v2_send(0x1b 0x09 0x00 0x02 0x0e 0x03 0x96 0x8b , 8)                            # osc pscale
+avrdude: Send: . [1b] . [09] . [00] . [02] . [0e] . [03] . [96] . [8b]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [09]
+0x09 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [03]
+0x03 hoping for size MSB... msg is 3 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [03]
+0x03 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [02]
+0x02 avrdude: Recv: . [1e]
+0x1e
+ = 9
+STK500V2: stk500v2_command(0x03 0x97 , 2)
+STK500V2: stk500v2_send(0x1b 0x0a 0x00 0x02 0x0e 0x03 0x97 0x89 , 8)                # get osc cmath
+avrdude: Send: . [1b] . [0a] . [00] . [02] . [0e] . [03] . [97] . [89]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [0a]
+0x0a hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [03]
+0x03 hoping for size MSB... msg is 3 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [03]
+0x03 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [01]
+0x01 avrdude: Recv: . [1e]
+0x1e
+ = 9
+         SCK period      : 2.2 us
+         Varef           : 5.0 V
+         Oscillator      : 230.400 kHz
+
+STK500V2: stk500v2_command(0x02 0x9e 0x01 , 3)
+STK500V2: stk500v2_send(0x1b 0x0b 0x00 0x03 0x0e 0x02 0x9e 0x01 0x80 , 9)               # set reset polarity to logical HIGH = vtarget
+avrdude: Send: . [1b] . [0b] . [00] . [03] . [0e] . [02] . [9e] . [01] . [80]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [0b]
+0x0b hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [02]
+0x02 hoping for size MSB... msg is 2 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [02]
+0x02 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [1e]
+0x1e
+ = 8
+STK500V2: stk500v2_command(0x10 0xc8 0x64 0x19 0x20 0x00 0x53 0x03 0xac 0x53 0x00 0x00 , 12)
+STK500V2: stk500v2_send(0x1b 0x0c 0x00 0x0c 0x0e 0x10 0xc8 0x64 0x19 0x20 0x00 0x53 0x03 0xac 0x53 0x00 0x00 0x3f , 18)     # enter isp mode
+avrdude: Send: . [1b] . [0c] . [00] . [0c] . [0e] . [10] . [c8] d [64] . [19]   [20] . [00] S [53] . [03] . [ac] S [53] . [00] . [00] ? [3f]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [0c]
+0x0c hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [02]
+0x02 hoping for size MSB... msg is 2 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [10]
+0x10 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [0b]
+0x0b
+ = 8
+avrdude: AVR device initialized and ready to accept instructions
+
+Reading | avrdude: stk500isp_read_byte(.., signature, 0x0, ...)
+avrdude: stk500isp_read_byte(): Sending read memory command: STK500V2: stk500v2_command(0x1b 0x04 0x30 0x00 0x00 0x00 , 6)
+STK500V2: stk500v2_send(0x1b 0x0d 0x00 0x06 0x0e 0x1b 0x04 0x30 0x00 0x00 0x00 0x31 , 12)           # command read signature byte 0
+avrdude: Send: . [1b] . [0d] . [00] . [06] . [0e] . [1b] . [04] 0 [30] . [00] . [00] . [00] 1 [31]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [0d]
+0x0d hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [04]
+0x04 hoping for size MSB... msg is 4 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [1b]
+0x1b avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [1e]
+0x1e avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [19]
+0x19
+ = 10
+avrdude: stk500isp_read_byte(.., signature, 0x1, ...)
+avrdude: stk500isp_read_byte(): Sending read memory command: STK500V2: stk500v2_command(0x1b 0x04 0x30 0x00 0x01 0x00 , 6)
+STK500V2: stk500v2_send(0x1b 0x0e 0x00 0x06 0x0e 0x1b 0x04 0x30 0x00 0x01 0x00 0x33 , 12)               # command read signature byte 1
+avrdude: Send: . [1b] . [0e] . [00] . [06] . [0e] . [1b] . [04] 0 [30] . [00] . [01] . [00] 3 [33]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [0e]
+0x0e hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [04]
+0x04 hoping for size MSB... msg is 4 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [1b]
+0x1b avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [95]
+0x95 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [91]
+0x91
+ = 10
+################avrdude: stk500isp_read_byte(.., signature, 0x2, ...)
+avrdude: stk500isp_read_byte(): Sending read memory command: STK500V2: stk500v2_command(0x1b 0x04 0x30 0x00 0x02 0x00 , 6)
+STK500V2: stk500v2_send(0x1b 0x0f 0x00 0x06 0x0e 0x1b 0x04 0x30 0x00 0x02 0x00 0x31 , 12)               # command read signature byte 2
+avrdude: Send: . [1b] . [0f] . [00] . [06] . [0e] . [1b] . [04] 0 [30] . [00] . [02] . [00] 1 [31]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [0f]
+0x0f hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [04]
+0x04 hoping for size MSB... msg is 4 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [1b]
+0x1b avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [02]
+0x02 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [07]
+0x07
+ = 10
+################################## | 100% 0.10s
+
+avrdude: Device signature = 0x1e9502 (probably m32)
+STK500V2: stk500v2_command(0x11 0x01 0x01 , 3)
+STK500V2: stk500v2_send(0x1b 0x10 0x00 0x03 0x0e 0x11 0x01 0x01 0x17 , 9)                   # command etner isp mode
+avrdude: Send: . [1b] . [10] . [00] . [03] . [0e] . [11] . [01] . [01] . [17]
+STK500V2: stk500v2_recv(): avrdude: Recv: . [1b]
+0x1b hoping for start token...got it
+avrdude: Recv: . [10]
+0x10 hoping for sequence...
+got it, incrementing
+avrdude: Recv: . [00]
+0x00 hoping for size LSB
+avrdude: Recv: . [02]
+0x02 hoping for size MSB... msg is 2 bytes
+avrdude: Recv: . [0e]
+0x0e avrdude: Recv: . [11]
+0x11 avrdude: Recv: . [00]
+0x00 avrdude: Recv: . [16]
+0x16
+ = 8
+STK500V2: stk500v2_close()
+
+avrdude done.  Thank you.

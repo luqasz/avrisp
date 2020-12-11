@@ -69,7 +69,7 @@ pub mod param {
         HwVer = 0x90,
         SwMajor = 0x91,
         SwMinor = 0x92,
-        TopcardDetect = 0x9A,
+        TopcardDetect = 0x9A, // This parameter only applies to STK500, not the AVRISP
         Status = 0x9C,
         Data = 0x9D,
     }

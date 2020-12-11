@@ -121,6 +121,26 @@ impl Into<u8> for Status {
     }
 }
 
+pub struct SwVersion {
+    pub major: u8,
+    pub minor: u8,
+}
+
+impl fmt::Display for SwVersion {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}.{}", self.major, self.minor,)
+    }
+}
+
+pub enum TopCard {
+    STK501 = 0xAA,
+    STK502 = 0x55,
+    STK503 = 0xFA,
+    STK504 = 0xEE,
+    STK505 = 0xE4,
+    STK520 = 0xDD,
+}
+
 /// Message structure:
 /// MESSAGE_START
 /// Sequence number (u8 incremented for each message sent, overflows after 0xff)

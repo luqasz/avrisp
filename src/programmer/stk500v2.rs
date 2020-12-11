@@ -285,6 +285,7 @@ impl STK500v2 {
     fn cmd(&mut self, cmd: u8, mut body: Vec<u8>) -> Result<Message, errors::ErrorKind> {
         // This will always succeed
         let seq = self.sequencer.next().unwrap();
+        // Prepend body with command
         body.insert(0, cmd);
         let sent_msg = Message::new(seq, body);
         self.write_message(sent_msg)?;

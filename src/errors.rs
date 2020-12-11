@@ -17,6 +17,21 @@ impl Error for ChecksumError {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct UnknownProgrammer;
+
+impl fmt::Display for UnknownProgrammer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Unknown programmer")
+    }
+}
+
+impl Error for UnknownProgrammer {
+    fn description(&self) -> &str {
+        "Unknown programmer"
+    }
+}
+
 #[derive(Debug)]
 pub struct SequenceError;
 
@@ -70,6 +85,7 @@ pub enum ErrorKind {
     ChecksumError,
     Io(io::Error),
     FromUtf8Error,
+    UnknownProgrammer,
 }
 
 impl From<io::Error> for ErrorKind {
@@ -87,5 +103,11 @@ impl From<std::string::FromUtf8Error> for ErrorKind {
 impl From<ChecksumError> for ErrorKind {
     fn from(_: ChecksumError) -> ErrorKind {
         ErrorKind::ChecksumError
+    }
+}
+
+impl From<UnknownProgrammer> for ErrorKind {
+    fn from(_: UnknownProgrammer) -> ErrorKind {
+        ErrorKind::UnknownProgrammer
     }
 }

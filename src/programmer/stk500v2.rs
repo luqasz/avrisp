@@ -319,20 +319,33 @@ impl STK500v2 {
         Ok(read_msg)
     }
 
-    pub fn set_param<T: param::Writable>(
+    fn set_param<T: param::Writable>(
         &mut self,
         param: T,
         value: u8,
     ) -> Result<(), errors::ErrorKind> {
         let bytes = vec![param.cast(), value];
-        self.cmd(command::Normal::SetParameter.into(), bytes)?;
+        let msg = self.cmd(command::Normal::SetParameter.into(), bytes)?;
+        if msg.body[0] != command::Normal::SetParameter.into() {
+            return Err(errors::ErrorKind::AnswerIdError {});
+        }
+        if msg.body[1] != Status::CmdOk.into() {
+            return Err(errors::ErrorKind::StatusError {});
+        }
         Ok(())
     }
 
-    pub fn get_param<T: param::Readable>(&mut self, param: T) -> Result<u8, errors::ErrorKind> {
+    fn get_param<T: param::Readable>(&mut self, param: T) -> Result<u8, errors::ErrorKind> {
         let bytes = vec![param.cast()];
         let msg = self.cmd(command::Normal::GetParameter.into(), bytes)?;
-        Ok(msg.body[1])
+        if msg.body[0] != command::Normal::GetParameter.into() {
+            return Err(errors::ErrorKind::AnswerIdError {});
+        }
+        if msg.body[1] != Status::CmdOk.into() {
+            return Err(errors::ErrorKind::StatusError {});
+        }
+        // return parameter
+        Ok(msg.body[2])
     }
 
     pub fn read_programmer_signature(&mut self) -> Result<programmer::Variant, errors::ErrorKind> {

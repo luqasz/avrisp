@@ -222,7 +222,7 @@ impl TryFrom<Vec<u8>> for Message {
 }
 
 fn to_hex(slice: &[u8]) -> String {
-    let mut hexes = vec![];
+    let mut hexes: Vec<String> = Vec::with_capacity(slice.len());
     for i in slice {
         hexes.push(format!("{:#04x}", i));
     }

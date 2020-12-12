@@ -276,7 +276,8 @@ impl STK500v2 {
         settings.set_parity(serial::ParityNone);
         settings.set_stop_bits(serial::Stop1);
         settings.set_char_size(serial::Bits8);
-        // Do not remove as given programmer may hang at random command.
+        // Must be set to none.
+        // Otherwise programmer may hang at random command.
         settings.set_flow_control(serial::FlowNone);
 
         port.write_settings(&settings)?;

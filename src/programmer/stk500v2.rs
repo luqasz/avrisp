@@ -172,8 +172,8 @@ impl Message {
     fn new(seq: u8, body: Vec<u8>) -> Self {
         Self {
             len: body.len() as u16,
-            body: body,
-            seq: seq,
+            body,
+            seq,
         }
     }
 
@@ -283,9 +283,9 @@ impl STK500v2 {
         port.write_settings(&settings)?;
         port.set_timeout(Duration::from_secs(1))?;
         Ok(STK500v2 {
-            port: port,
+            port,
             sequencer: SequenceGenerator::new(),
-            specs: specs,
+            specs,
         })
     }
 
@@ -397,7 +397,7 @@ pub struct IspMode {
 
 impl IspMode {
     fn new(prog: STK500v2) -> IspMode {
-        IspMode { prog: prog }
+        IspMode { prog }
     }
 
     // Does not work on atmega2560.

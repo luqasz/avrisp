@@ -55,13 +55,9 @@ mod command {
 
 #[allow(dead_code)]
 pub mod param {
-    pub trait Readable {
-        fn cast(self) -> u8;
-    }
+    pub trait Readable {}
 
-    pub trait Writable {
-        fn cast(self) -> u8;
-    }
+    pub trait Writable {}
 
     pub enum RO {
         BuildNumberLow = 0x80,
@@ -74,9 +70,11 @@ pub mod param {
         Data = 0x9D,
     }
 
-    impl Readable for RO {
-        fn cast(self) -> u8 {
-            self as u8
+    impl Readable for RO {}
+
+    impl From<RO> for u8 {
+        fn from(value: RO) -> u8 {
+            value as u8
         }
     }
 
@@ -90,15 +88,13 @@ pub mod param {
         ResetPolarity = 0x9E,
     }
 
-    impl Readable for RW {
-        fn cast(self) -> u8 {
-            self as u8
-        }
-    }
+    impl Readable for RW {}
 
-    impl Writable for RW {
-        fn cast(self) -> u8 {
-            self as u8
+    impl Writable for RW {}
+
+    impl From<RW> for u8 {
+        fn from(value: RW) -> u8 {
+            value as u8
         }
     }
 }
@@ -333,12 +329,11 @@ impl STK500v2 {
         Ok(read_msg)
     }
 
-    fn set_param<T: param::Writable>(
-        &mut self,
-        param: T,
-        value: u8,
-    ) -> Result<(), errors::ErrorKind> {
-        let bytes = vec![param.cast(), value];
+    fn set_param<T>(&mut self, param: T, value: u8) -> Result<(), errors::ErrorKind>
+    where
+        T: param::Writable + Into<u8>,
+    {
+        let bytes = vec![param.into(), value];
         let msg = self.cmd(command::Normal::SetParameter.into(), bytes)?;
         if msg.body[0] != command::Normal::SetParameter.into() {
             return Err(errors::ErrorKind::AnswerIdError {});
@@ -349,8 +344,11 @@ impl STK500v2 {
         Ok(())
     }
 
-    fn get_param<T: param::Readable>(&mut self, param: T) -> Result<u8, errors::ErrorKind> {
-        let bytes = vec![param.cast()];
+    fn get_param<T>(&mut self, param: T) -> Result<u8, errors::ErrorKind>
+    where
+        T: param::Readable + Into<u8>,
+    {
+        let bytes: Vec<u8> = vec![param.into()];
         let msg = self.cmd(command::Normal::GetParameter.into(), bytes)?;
         if msg.body[0] != command::Normal::GetParameter.into() {
             return Err(errors::ErrorKind::AnswerIdError {});

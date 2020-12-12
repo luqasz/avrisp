@@ -155,6 +155,8 @@ struct Message {
     body: Vec<u8>,
 }
 
+type MessageBuffer = [u8; Message::MAX_SIZE];
+
 impl Message {
     const MESSAGE_START: u8 = 0x1B;
     const TOKEN: u8 = 0x0E;
@@ -195,27 +197,23 @@ impl Into<Vec<u8>> for Message {
     }
 }
 
-impl TryFrom<Vec<u8>> for Message {
+impl TryFrom<MessageBuffer> for Message {
     type Error = errors::ErrorKind;
 
-    fn try_from(mut bytes: Vec<u8>) -> Result<Self, Self::Error> {
-        let len = u16::from_be_bytes([
-            bytes[Self::LEN_BYTE_0_POSITION],
-            bytes[Self::LEN_BYTE_1_POSITION],
+    fn try_from(buffer: MessageBuffer) -> Result<Self, Self::Error> {
+        let body_size = u16::from_be_bytes([
+            buffer[Self::LEN_BYTE_0_POSITION],
+            buffer[Self::LEN_BYTE_1_POSITION],
         ]) as u16;
-        let crc: u8 = match bytes.pop() {
-            Some(x) => x,
-            None => return Err(errors::ErrorKind::ChecksumError),
-        };
-        if crc != Self::calc_checksum(&bytes) {
+        let end_index = Self::HEADER_SIZE + body_size as usize;
+        let crc: u8 = buffer[end_index];
+        if crc != Self::calc_checksum(&buffer[..end_index]) {
             return Err(errors::ErrorKind::ChecksumError);
         } else {
             Ok(Message {
-                len: len,
-                body: bytes
-                    [Self::BODY_START_POSITION..=(bytes.len() - Self::CHECKSUM_SIZE) as usize]
-                    .to_vec(),
-                seq: bytes[Self::SEQ_PSITION],
+                len: body_size,
+                body: buffer[Self::BODY_START_POSITION..end_index].to_vec(),
+                seq: buffer[Self::SEQ_PSITION],
             })
         }
     }
@@ -294,21 +292,21 @@ impl STK500v2 {
         println!("write message {}", msg);
         let msg: Vec<u8> = msg.into();
         self.port.write_all(msg.as_slice())?;
+        self.port.flush()?;
         return Ok(());
     }
 
     fn read_message(&mut self) -> Result<Message, errors::ErrorKind> {
-        let mut buf = vec![0u8; Message::HEADER_SIZE];
-        self.port.read_exact(&mut buf)?;
-        let len = u16::from_be_bytes([
-            buf[Message::LEN_BYTE_0_POSITION],
-            buf[Message::LEN_BYTE_1_POSITION],
+        let mut buffer: MessageBuffer = [0; Message::MAX_SIZE];
+        self.port.read_exact(&mut buffer[..Message::HEADER_SIZE])?;
+        let body_size = u16::from_be_bytes([
+            buffer[Message::LEN_BYTE_0_POSITION],
+            buffer[Message::LEN_BYTE_1_POSITION],
         ]) as usize;
-        // Extend to fit body and checksum byte.
-        buf.resize(buf.len() + len + Message::CHECKSUM_SIZE, 0);
+        let end = Message::HEADER_SIZE + body_size + Message::CHECKSUM_SIZE;
         self.port
-            .read_exact(&mut buf[Message::BODY_START_POSITION..])?;
-        let msg = Message::try_from(buf)?;
+            .read_exact(&mut buffer[Message::BODY_START_POSITION..end])?;
+        let msg = Message::try_from(buffer)?;
         println!("got message {}", msg);
         return Ok(msg);
     }
@@ -569,36 +567,34 @@ mod tests {
         }
 
         #[test]
-        fn try_from_vec_is_ok() {
-            let v = vec![
-                Message::MESSAGE_START,
-                1,
-                0,
-                4,
-                Message::TOKEN,
-                89,
-                100,
-                78,
-                109,
-                14, // crc
-            ];
-            assert_ok!(Message::try_from(v));
+        fn try_from_array_is_ok() {
+            let mut buffer: MessageBuffer = [0; Message::MAX_SIZE];
+            buffer[0] = Message::MESSAGE_START;
+            buffer[1] = 1;
+            buffer[2] = 0;
+            buffer[3] = 4;
+            buffer[4] = Message::TOKEN;
+            buffer[5] = 89;
+            buffer[6] = 100;
+            buffer[7] = 78;
+            buffer[8] = 109;
+            buffer[9] = 14;
+            assert_ok!(Message::try_from(buffer));
         }
         #[test]
-        fn try_from_vec_bad_checksum() {
-            let v = vec![
-                Message::MESSAGE_START,
-                1,
-                0,
-                4,
-                Message::TOKEN,
-                89,
-                100,
-                78,
-                109,
-                0, // crc
-            ];
-            let err = Message::try_from(v).unwrap_err();
+        fn try_from_array_bad_checksum() {
+            let mut buffer: MessageBuffer = [0; Message::MAX_SIZE];
+            buffer[0] = Message::MESSAGE_START;
+            buffer[1] = 1;
+            buffer[2] = 0;
+            buffer[3] = 4;
+            buffer[4] = Message::TOKEN;
+            buffer[5] = 89;
+            buffer[6] = 100;
+            buffer[7] = 78;
+            buffer[8] = 109;
+            buffer[9] = 0;
+            let err = Message::try_from(buffer).unwrap_err();
             match err {
                 errors::ErrorKind::ChecksumError => (),
                 _ => panic!("wrong error returned"),

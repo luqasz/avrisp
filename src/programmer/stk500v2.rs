@@ -164,7 +164,8 @@ impl Message {
     const LEN_BYTE_0_POSITION: usize = 2;
     const LEN_BYTE_1_POSITION: usize = 3;
     const SEQ_PSITION: usize = 1;
-    const MAX_SIZE: usize = 275 + Self::CHECKSUM_SIZE + Self::HEADER_SIZE;
+    const MAX_BODY_SIZE: usize = 275;
+    const MAX_SIZE: usize = Self::MAX_BODY_SIZE + Self::CHECKSUM_SIZE + Self::HEADER_SIZE;
 
     fn new(seq: u8, body: Vec<u8>) -> Self {
         Self {

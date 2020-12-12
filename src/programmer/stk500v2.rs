@@ -226,7 +226,7 @@ fn to_hex(slice: &[u8]) -> String {
     for i in slice {
         hexes.push(format!("{:#04x}", i));
     }
-    return hexes.join(" ");
+    return hexes.join(", ");
 }
 
 impl fmt::Display for Message {

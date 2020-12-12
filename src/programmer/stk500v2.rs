@@ -164,10 +164,10 @@ impl Message {
     const LEN_BYTE_0_POSITION: usize = 2;
     const LEN_BYTE_1_POSITION: usize = 3;
     const SEQ_PSITION: usize = 1;
-    const MAX_SIZE: usize = 275 + Message::CHECKSUM_SIZE + Message::HEADER_SIZE;
+    const MAX_SIZE: usize = 275 + Self::CHECKSUM_SIZE + Self::HEADER_SIZE;
 
     fn new(seq: u8, body: Vec<u8>) -> Self {
-        Message {
+        Self {
             len: body.len() as u16,
             body: body,
             seq: seq,
@@ -187,15 +187,9 @@ impl Message {
 impl Into<Vec<u8>> for Message {
     fn into(self) -> Vec<u8> {
         let len = (self.len as u16).to_be_bytes();
-        let mut bytes: Vec<u8> = vec![
-            Message::MESSAGE_START,
-            self.seq,
-            len[0],
-            len[1],
-            Message::TOKEN,
-        ];
+        let mut bytes: Vec<u8> = vec![Self::MESSAGE_START, self.seq, len[0], len[1], Self::TOKEN];
         bytes.extend(&self.body);
-        bytes.push(Message::calc_checksum(&bytes));
+        bytes.push(Self::calc_checksum(&bytes));
         bytes
     }
 }
@@ -205,22 +199,22 @@ impl TryFrom<Vec<u8>> for Message {
 
     fn try_from(mut bytes: Vec<u8>) -> Result<Self, Self::Error> {
         let len = u16::from_be_bytes([
-            bytes[Message::LEN_BYTE_0_POSITION],
-            bytes[Message::LEN_BYTE_1_POSITION],
+            bytes[Self::LEN_BYTE_0_POSITION],
+            bytes[Self::LEN_BYTE_1_POSITION],
         ]) as u16;
         let crc: u8 = match bytes.pop() {
             Some(x) => x,
             None => return Err(errors::ErrorKind::ChecksumError),
         };
-        if crc != Message::calc_checksum(&bytes) {
+        if crc != Self::calc_checksum(&bytes) {
             return Err(errors::ErrorKind::ChecksumError);
         } else {
             Ok(Message {
                 len: len,
-                body: bytes[Message::BODY_START_POSITION
-                    ..=(bytes.len() - Message::CHECKSUM_SIZE) as usize]
+                body: bytes
+                    [Self::BODY_START_POSITION..=(bytes.len() - Self::CHECKSUM_SIZE) as usize]
                     .to_vec(),
-                seq: bytes[Message::SEQ_PSITION],
+                seq: bytes[Self::SEQ_PSITION],
             })
         }
     }

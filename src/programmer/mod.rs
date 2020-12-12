@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub mod stk500v2;
 use crate::errors;
 use std::convert::TryFrom;

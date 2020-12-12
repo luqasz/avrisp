@@ -232,7 +232,7 @@ impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "sequence number: {} body length: {} body: {}",
+            "sequence_number={} body_length={} body=[{}]",
             self.seq,
             self.len,
             to_hex(&self.body),

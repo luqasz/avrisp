@@ -142,10 +142,10 @@ pub enum TopCard {
 }
 
 /// Message structure:
-/// MESSAGE_START
+/// Message start
 /// Sequence number (u8 incremented for each message sent, overflows after 0xff)
 /// Body length (maximum of 275 bytes, in big endian order)
-/// TOKEN
+/// Token
 /// Body as bytes
 /// Calculated checksum
 #[derive(Debug)]

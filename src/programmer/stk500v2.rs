@@ -146,16 +146,16 @@ pub enum TopCard {
 /// Calculated checksum
 #[derive(Debug)]
 struct Message {
-    seq: u8,
-    len: u16,
-    body: Vec<u8>,
+    buffer: MessageBuffer,
 }
 
 type MessageBuffer = [u8; Message::MAX_SIZE];
 
 impl Message {
     const MESSAGE_START: u8 = 0x1B;
+    const MESSAGE_START_POSITION: usize = 0;
     const TOKEN: u8 = 0x0E;
+    const TOKEN_PSITION: usize = 4;
     const HEADER_SIZE: usize = 5;
     const CHECKSUM_SIZE: usize = 1;
     const BODY_START_POSITION: usize = 5;
@@ -166,11 +166,42 @@ impl Message {
     const MAX_SIZE: usize = Self::MAX_BODY_SIZE + Self::CHECKSUM_SIZE + Self::HEADER_SIZE;
 
     fn new(seq: u8, body: Vec<u8>) -> Self {
-        Self {
-            len: body.len() as u16,
-            body,
-            seq,
-        }
+        let mut buffer: MessageBuffer = [0; Self::MAX_SIZE];
+        buffer[Self::MESSAGE_START_POSITION] = Self::MESSAGE_START;
+        buffer[Self::TOKEN_PSITION] = Self::TOKEN;
+        buffer[Self::SEQ_PSITION] = seq;
+        let body_size = body.len();
+        let end_index = Self::BODY_START_POSITION + body_size;
+        buffer[Self::LEN_BYTE_0_POSITION..=Self::LEN_BYTE_1_POSITION]
+            .swap_with_slice(&mut (body_size as u16).to_be_bytes());
+        buffer[Self::BODY_START_POSITION..end_index].copy_from_slice(&body.as_slice());
+        buffer[end_index] = Self::calc_checksum(&buffer[..end_index]);
+        Self { buffer }
+    }
+
+    fn get_sequence(&self) -> u8 {
+        self.buffer[Self::SEQ_PSITION]
+    }
+
+    fn get_body_size(&self) -> u16 {
+        u16::from_be_bytes([
+            self.buffer[Self::LEN_BYTE_0_POSITION],
+            self.buffer[Self::LEN_BYTE_1_POSITION],
+        ])
+    }
+
+    // Return ending index at where message ends.
+    // That is index including.
+    fn get_end_index(&self) -> usize {
+        Self::BODY_START_POSITION + self.get_body_size() as usize
+    }
+
+    fn body_slice(&self) -> &[u8] {
+        &self.buffer[Self::BODY_START_POSITION..self.get_end_index()]
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        &self.buffer[..=self.get_end_index()]
     }
 
     /// Calculate checksum (XOR of all bytes)
@@ -183,16 +214,6 @@ impl Message {
     }
 }
 
-impl Into<Vec<u8>> for Message {
-    fn into(self) -> Vec<u8> {
-        let len = (self.len as u16).to_be_bytes();
-        let mut bytes: Vec<u8> = vec![Self::MESSAGE_START, self.seq, len[0], len[1], Self::TOKEN];
-        bytes.extend(&self.body);
-        bytes.push(Self::calc_checksum(&bytes));
-        bytes
-    }
-}
-
 impl TryFrom<MessageBuffer> for Message {
     type Error = errors::ErrorKind;
 
@@ -201,16 +222,12 @@ impl TryFrom<MessageBuffer> for Message {
             buffer[Self::LEN_BYTE_0_POSITION],
             buffer[Self::LEN_BYTE_1_POSITION],
         ]) as u16;
-        let end_index = Self::HEADER_SIZE + body_size as usize;
+        let end_index = Self::BODY_START_POSITION + body_size as usize;
         let crc: u8 = buffer[end_index];
         if crc != Self::calc_checksum(&buffer[..end_index]) {
             return Err(errors::ErrorKind::ChecksumError);
         } else {
-            Ok(Message {
-                len: body_size,
-                body: buffer[Self::BODY_START_POSITION..end_index].to_vec(),
-                seq: buffer[Self::SEQ_PSITION],
-            })
+            Ok(Message { buffer })
         }
     }
 }
@@ -228,9 +245,9 @@ impl fmt::Display for Message {
         write!(
             f,
             "sequence_number={} body_length={} body=[{}]",
-            self.seq,
-            self.len,
-            to_hex(&self.body),
+            self.get_sequence(),
+            self.body_slice().len(),
+            to_hex(self.body_slice()),
         )
     }
 }
@@ -287,7 +304,6 @@ impl STK500v2 {
 
     fn write_message(&mut self, msg: Message) -> Result<(), errors::ErrorKind> {
         println!("write message {}", msg);
-        let msg: Vec<u8> = msg.into();
         self.port.write_all(msg.as_slice())?;
         self.port.flush()?;
         return Ok(());
@@ -317,13 +333,13 @@ impl STK500v2 {
         self.write_message(sent_msg)?;
         let read_msg = self.read_message()?;
 
-        if seq != read_msg.seq {
+        if seq != read_msg.get_sequence() {
             return Err(errors::ErrorKind::SequenceError {});
         }
-        if cmd != read_msg.body[0] {
+        if cmd != read_msg.body_slice()[0] {
             return Err(errors::ErrorKind::AnswerIdError {});
         }
-        if read_msg.body[1] != Status::CmdOk.into() {
+        if read_msg.body_slice()[1] != Status::CmdOk.into() {
             return Err(errors::ErrorKind::StatusError {});
         }
         Ok(read_msg)
@@ -335,10 +351,10 @@ impl STK500v2 {
     {
         let bytes = vec![param.into(), value];
         let msg = self.cmd(command::Normal::SetParameter.into(), bytes)?;
-        if msg.body[0] != command::Normal::SetParameter.into() {
+        if msg.body_slice()[0] != command::Normal::SetParameter.into() {
             return Err(errors::ErrorKind::AnswerIdError {});
         }
-        if msg.body[1] != Status::CmdOk.into() {
+        if msg.body_slice()[1] != Status::CmdOk.into() {
             return Err(errors::ErrorKind::StatusError {});
         }
         Ok(())
@@ -350,19 +366,19 @@ impl STK500v2 {
     {
         let bytes: Vec<u8> = vec![param.into()];
         let msg = self.cmd(command::Normal::GetParameter.into(), bytes)?;
-        if msg.body[0] != command::Normal::GetParameter.into() {
+        if msg.body_slice()[0] != command::Normal::GetParameter.into() {
             return Err(errors::ErrorKind::AnswerIdError {});
         }
-        if msg.body[1] != Status::CmdOk.into() {
+        if msg.body_slice()[1] != Status::CmdOk.into() {
             return Err(errors::ErrorKind::StatusError {});
         }
         // return parameter
-        Ok(msg.body[2])
+        Ok(msg.body_slice()[2])
     }
 
     pub fn read_programmer_signature(&mut self) -> Result<programmer::Variant, errors::ErrorKind> {
         let msg = self.cmd(command::Normal::SignOn.into(), vec![])?;
-        let variant = String::from_utf8(msg.body[3..].to_vec())?;
+        let variant = String::from_utf8(msg.body_slice()[3..].to_vec())?;
         Ok(programmer::Variant::try_from(variant)?)
     }
 }
@@ -415,12 +431,12 @@ impl IspMode {
             // Read Program Memory command byte #1
             let read_command = avrisp::READ_FLASH_LOW.0;
             let to_read_as_bytes = (bytes_to_read as u16).to_be_bytes();
-            let mut msg = self.prog.cmd(
+            let msg = self.prog.cmd(
                 command::Isp::ReadFlash.into(),
                 vec![to_read_as_bytes[0], to_read_as_bytes[1], read_command],
             )?;
             let data_offset = 2;
-            buffer.swap_with_slice(&mut msg.body[data_offset..(bytes_to_read + data_offset)]);
+            buffer.copy_from_slice(&msg.body_slice()[data_offset..(bytes_to_read + data_offset)]);
         }
         Ok(())
     }
@@ -437,13 +453,13 @@ impl IspMode {
                 (addr as u32).to_be_bytes().to_vec(),
             )?;
             let length_bytes = (self.prog.specs.eeprom.page_size as u16).to_be_bytes();
-            let mut msg = self.prog.cmd(
+            let msg = self.prog.cmd(
                 command::Isp::ReadEeprom.into(),
                 vec![length_bytes[0], length_bytes[1], avrisp::READ_EEPROM.0],
             )?;
             let data_offset = 2;
-            buffer.swap_with_slice(
-                &mut msg.body[data_offset..(self.prog.specs.eeprom.page_size + data_offset)],
+            buffer.copy_from_slice(
+                &msg.body_slice()[data_offset..(self.prog.specs.eeprom.page_size + data_offset)],
             );
         }
         Ok(())
@@ -454,7 +470,7 @@ impl IspMode {
             command::Isp::ReadFuse.into(),
             vec![self.prog.specs.fuse_poll_index, cmd.0, cmd.1, cmd.2, cmd.3],
         )?;
-        Ok(msg.body[2])
+        Ok(msg.body_slice()[2])
     }
 }
 
@@ -495,7 +511,7 @@ impl AVRLockByteGet for IspMode {
                 avrisp::READ_LOCK.3,
             ],
         )?;
-        Ok(msg.body[2])
+        Ok(msg.body_slice()[2])
     }
 }
 
@@ -523,7 +539,7 @@ impl MCUSignature for IspMode {
                     avrisp::READ_SIGNATURE.3,
                 ],
             )?;
-            signature[addr] = msg.body[2];
+            signature[addr] = msg.body_slice()[2];
         }
         Ok(avrisp::Signature::from(signature))
     }

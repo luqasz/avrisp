@@ -324,11 +324,10 @@ impl STK500v2 {
         return Ok(msg);
     }
 
-    fn cmd(&mut self, cmd: u8, mut body: Vec<u8>) -> Result<Message, errors::ErrorKind> {
+    fn command(&mut self, body: Vec<u8>) -> Result<Message, errors::ErrorKind> {
         // This will always succeed
         let seq = self.sequencer.next().unwrap();
-        // Prepend body with command
-        body.insert(0, cmd);
+        let cmd = body[0];
         let sent_msg = Message::new(seq, body);
         self.write_message(sent_msg)?;
         let read_msg = self.read_message()?;
@@ -349,8 +348,8 @@ impl STK500v2 {
     where
         T: param::Writable + Into<u8>,
     {
-        let bytes = vec![param.into(), value];
-        let msg = self.cmd(command::Normal::SetParameter.into(), bytes)?;
+        let bytes = vec![command::Normal::SetParameter.into(), param.into(), value];
+        let msg = self.command(bytes)?;
         if msg.body_slice()[0] != command::Normal::SetParameter.into() {
             return Err(errors::ErrorKind::AnswerIdError {});
         }
@@ -364,8 +363,8 @@ impl STK500v2 {
     where
         T: param::Readable + Into<u8>,
     {
-        let bytes: Vec<u8> = vec![param.into()];
-        let msg = self.cmd(command::Normal::GetParameter.into(), bytes)?;
+        let bytes: Vec<u8> = vec![command::Normal::GetParameter.into(), param.into()];
+        let msg = self.command(bytes)?;
         if msg.body_slice()[0] != command::Normal::GetParameter.into() {
             return Err(errors::ErrorKind::AnswerIdError {});
         }
@@ -377,7 +376,7 @@ impl STK500v2 {
     }
 
     pub fn read_programmer_signature(&mut self) -> Result<programmer::Variant, errors::ErrorKind> {
-        let msg = self.cmd(command::Normal::SignOn.into(), vec![])?;
+        let msg = self.command(vec![command::Normal::SignOn.into()])?;
         let variant = String::from_utf8(msg.body_slice()[3..].to_vec())?;
         Ok(programmer::Variant::try_from(variant)?)
     }
@@ -387,6 +386,7 @@ impl TryInto<IspMode> for STK500v2 {
     type Error = errors::ErrorKind;
     fn try_into(mut self) -> Result<IspMode, Self::Error> {
         let bytes = vec![
+            command::Normal::EnterIspMode.into(),
             self.specs.timeout,
             self.specs.stab_delay,
             self.specs.cmd_exe_delay,
@@ -400,7 +400,7 @@ impl TryInto<IspMode> for STK500v2 {
             avrisp::PROGRAMMING_ENABLE.3,
         ];
         self.set_param(param::RW::ResetPolarity, self.specs.reset_polarity.into())?;
-        self.cmd(command::Normal::EnterIspMode.into(), bytes)?;
+        self.command(bytes)?;
         Ok(IspMode::new(self))
     }
 }
@@ -425,16 +425,18 @@ impl IspMode {
             .step_by(step_by)
             .zip(buffer.chunks_exact_mut(bytes_to_read))
         {
-            let dst_addr = (addr as u32).to_be_bytes().to_vec();
-            self.prog
-                .cmd(command::Normal::LoadAddress.into(), dst_addr)?;
+            let mut dst_addr = vec![command::Normal::LoadAddress.into()];
+            dst_addr.extend((addr as u32).to_be_bytes().to_vec());
+            self.prog.command(dst_addr)?;
             // Read Program Memory command byte #1
             let read_command = avrisp::READ_FLASH_LOW.0;
             let to_read_as_bytes = (bytes_to_read as u16).to_be_bytes();
-            let msg = self.prog.cmd(
+            let msg = self.prog.command(vec![
                 command::Isp::ReadFlash.into(),
-                vec![to_read_as_bytes[0], to_read_as_bytes[1], read_command],
-            )?;
+                to_read_as_bytes[0],
+                to_read_as_bytes[1],
+                read_command,
+            ])?;
             let data_offset = 2;
             buffer.copy_from_slice(&msg.body_slice()[data_offset..(bytes_to_read + data_offset)]);
         }
@@ -448,15 +450,16 @@ impl IspMode {
             .step_by(self.prog.specs.eeprom.page_size)
             .zip(bytes.chunks_exact_mut(self.prog.specs.eeprom.page_size))
         {
-            self.prog.cmd(
-                command::Normal::LoadAddress.into(),
-                (addr as u32).to_be_bytes().to_vec(),
-            )?;
+            let mut dst_addr = vec![command::Normal::LoadAddress.into()];
+            dst_addr.extend((addr as u32).to_be_bytes().to_vec());
+            self.prog.command(dst_addr)?;
             let length_bytes = (self.prog.specs.eeprom.page_size as u16).to_be_bytes();
-            let msg = self.prog.cmd(
+            let msg = self.prog.command(vec![
                 command::Isp::ReadEeprom.into(),
-                vec![length_bytes[0], length_bytes[1], avrisp::READ_EEPROM.0],
-            )?;
+                length_bytes[0],
+                length_bytes[1],
+                avrisp::READ_EEPROM.0,
+            ])?;
             let data_offset = 2;
             buffer.copy_from_slice(
                 &msg.body_slice()[data_offset..(self.prog.specs.eeprom.page_size + data_offset)],
@@ -466,51 +469,55 @@ impl IspMode {
     }
 
     fn read_fuse(&mut self, cmd: avrisp::IspCommand) -> Result<u8, errors::ErrorKind> {
-        let msg = self.prog.cmd(
+        let msg = self.prog.command(vec![
             command::Isp::ReadFuse.into(),
-            vec![self.prog.specs.fuse_poll_index, cmd.0, cmd.1, cmd.2, cmd.3],
-        )?;
+            self.prog.specs.fuse_poll_index,
+            cmd.0,
+            cmd.1,
+            cmd.2,
+            cmd.3,
+        ])?;
         Ok(msg.body_slice()[2])
     }
 }
 
 impl Erase for IspMode {
     fn erase(&mut self) -> Result<(), errors::ErrorKind> {
-        self.prog.cmd(
+        self.prog.command(vec![
             command::Isp::ChipErase.into(),
-            vec![
-                self.prog.specs.erase_delay,
-                self.prog.specs.erase_poll_method,
-                avrisp::CHIP_ERASE.0,
-                avrisp::CHIP_ERASE.1,
-                avrisp::CHIP_ERASE.2,
-                avrisp::CHIP_ERASE.3,
-            ],
-        )?;
+            self.prog.specs.erase_delay,
+            self.prog.specs.erase_poll_method,
+            avrisp::CHIP_ERASE.0,
+            avrisp::CHIP_ERASE.1,
+            avrisp::CHIP_ERASE.2,
+            avrisp::CHIP_ERASE.3,
+        ])?;
         Ok(())
     }
 }
 
 impl Programmer for IspMode {
     fn close(mut self) -> Result<(), errors::ErrorKind> {
-        let bytes = vec![self.prog.specs.pre_delay, self.prog.specs.post_delay];
-        self.prog.cmd(command::Normal::LeaveIspMode.into(), bytes)?;
+        let bytes = vec![
+            command::Normal::LeaveIspMode.into(),
+            self.prog.specs.pre_delay,
+            self.prog.specs.post_delay,
+        ];
+        self.prog.command(bytes)?;
         Ok(())
     }
 }
 
 impl AVRLockByteGet for IspMode {
     fn get_lock_byte(&mut self) -> Result<u8, errors::ErrorKind> {
-        let msg = self.prog.cmd(
+        let msg = self.prog.command(vec![
             command::Isp::ReadLock.into(),
-            vec![
-                self.prog.specs.lock_poll_index,
-                avrisp::READ_LOCK.0,
-                avrisp::READ_LOCK.1,
-                avrisp::READ_LOCK.2,
-                avrisp::READ_LOCK.3,
-            ],
-        )?;
+            self.prog.specs.lock_poll_index,
+            avrisp::READ_LOCK.0,
+            avrisp::READ_LOCK.1,
+            avrisp::READ_LOCK.2,
+            avrisp::READ_LOCK.3,
+        ])?;
         Ok(msg.body_slice()[2])
     }
 }
@@ -529,16 +536,14 @@ impl MCUSignature for IspMode {
     fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, errors::ErrorKind> {
         let mut signature: [u8; 3] = [0; 3];
         for addr in 0..signature.len() {
-            let msg = self.prog.cmd(
+            let msg = self.prog.command(vec![
                 command::Isp::ReadSignature.into(),
-                vec![
-                    self.prog.specs.signature_poll_index,
-                    avrisp::READ_SIGNATURE.0,
-                    avrisp::READ_SIGNATURE.1,
-                    addr as u8,
-                    avrisp::READ_SIGNATURE.3,
-                ],
-            )?;
+                self.prog.specs.signature_poll_index,
+                avrisp::READ_SIGNATURE.0,
+                avrisp::READ_SIGNATURE.1,
+                addr as u8,
+                avrisp::READ_SIGNATURE.3,
+            ])?;
             signature[addr] = msg.body_slice()[2];
         }
         Ok(avrisp::Signature::from(signature))

@@ -423,12 +423,12 @@ impl IspMode {
 
     // Does not work on atmega2560.
     // Requires some kind of different handling when loading memory address
-    pub fn read_flash(&mut self, start: usize, buffer: &mut [u8]) -> Result<(), errors::ErrorKind> {
+    pub fn read_flash(&mut self, buffer: &mut [u8]) -> Result<(), errors::ErrorKind> {
         // For word-addressed memories (program flash), the Address parameter is the word address.
         let bytes_to_read = self.prog.specs.flash.page_size;
         // Block size is given in Kwords. Word is 16 bit.
         let step_by = self.prog.specs.flash.block_size;
-        for (addr, buffer) in (start..buffer.len())
+        for (addr, buffer) in (0..buffer.len())
             .step_by(step_by)
             .zip(buffer.chunks_exact_mut(bytes_to_read))
         {
@@ -448,8 +448,8 @@ impl IspMode {
 
     // Does not work on atmega2560.
     // Requires some kind of different handling when loading memory address
-    pub fn read_eeprom(&mut self, start: usize, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
-        for (addr, buffer) in (start..(bytes.len() + start))
+    pub fn read_eeprom(&mut self, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
+        for (addr, buffer) in (0..bytes.len())
             .step_by(self.prog.specs.eeprom.page_size)
             .zip(bytes.chunks_exact_mut(self.prog.specs.eeprom.page_size))
         {

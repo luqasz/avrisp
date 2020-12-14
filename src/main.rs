@@ -20,10 +20,10 @@ fn main() -> Result<(), errors::ErrorKind> {
     signature(&mut isp)?;
     fuses(&mut isp)?;
     lock_bytes(&mut isp)?;
-    isp.read_flash(0, &mut flash)?;
+    isp.read_flash(&mut flash)?;
     truncate(&mut flash);
     dump(&mut flash, String::from("flash.bin"));
-    isp.read_eeprom(0, &mut eeprom)?;
+    isp.read_eeprom(&mut eeprom)?;
     dump(&mut eeprom, String::from("eeprom.bin"));
     isp.close()?;
     return Ok(());

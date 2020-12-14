@@ -414,6 +414,13 @@ impl IspMode {
         IspMode { prog }
     }
 
+    fn load_address(&mut self, address: usize) -> Result<(), errors::ErrorKind> {
+        let mut dst_addr = vec![command::Normal::LoadAddress.into()];
+        dst_addr.extend((address as u32).to_be_bytes().to_vec());
+        self.prog.command(dst_addr)?;
+        Ok(())
+    }
+
     // Does not work on atmega2560.
     // Requires some kind of different handling when loading memory address
     pub fn read_flash(&mut self, start: usize, buffer: &mut [u8]) -> Result<(), errors::ErrorKind> {
@@ -425,17 +432,13 @@ impl IspMode {
             .step_by(step_by)
             .zip(buffer.chunks_exact_mut(bytes_to_read))
         {
-            let mut dst_addr = vec![command::Normal::LoadAddress.into()];
-            dst_addr.extend((addr as u32).to_be_bytes().to_vec());
-            self.prog.command(dst_addr)?;
-            // Read Program Memory command byte #1
-            let read_command = avrisp::READ_FLASH_LOW.0;
+            self.load_address(addr)?;
             let to_read_as_bytes = (bytes_to_read as u16).to_be_bytes();
             let msg = self.prog.command(vec![
                 command::Isp::ReadFlash.into(),
                 to_read_as_bytes[0],
                 to_read_as_bytes[1],
-                read_command,
+                avrisp::READ_FLASH_LOW.0,
             ])?;
             let data_offset = 2;
             buffer.copy_from_slice(&msg.body_slice()[data_offset..(bytes_to_read + data_offset)]);
@@ -450,9 +453,7 @@ impl IspMode {
             .step_by(self.prog.specs.eeprom.page_size)
             .zip(bytes.chunks_exact_mut(self.prog.specs.eeprom.page_size))
         {
-            let mut dst_addr = vec![command::Normal::LoadAddress.into()];
-            dst_addr.extend((addr as u32).to_be_bytes().to_vec());
-            self.prog.command(dst_addr)?;
+            self.load_address(addr)?;
             let length_bytes = (self.prog.specs.eeprom.page_size as u16).to_be_bytes();
             let msg = self.prog.command(vec![
                 command::Isp::ReadEeprom.into(),

@@ -1,6 +1,6 @@
 [package]
-name = "flash"
-version = "0.1.0"
+name = "avrisp"
+version = "0.3.0"
 authors = ["Łukasz Kostka <lukasz.g.kostka@gmail.com>"]
 edition = "2018"
 

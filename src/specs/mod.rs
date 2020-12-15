@@ -31,6 +31,7 @@ pub const WRITE_EXTENDED_FUSE: IspCommand = (0xac, 0xa4, 0x00, 0x00);
 pub const WRITE_LOCK: IspCommand = (0xac, 0xe0, 0x00, 0x00);
 
 /// MCU signature.
+#[derive(PartialEq, Debug)]
 pub struct Signature {
     pub bytes: (u8, u8, u8),
 }
@@ -119,7 +120,7 @@ pub struct Specs {
 
 #[cfg(test)]
 mod tests {
-    use super::Signature;
+    use super::*;
 
     #[test]
     fn signature_from_array_trait() {
@@ -135,5 +136,19 @@ mod tests {
         assert_eq!(sign.bytes.0, 1);
         assert_eq!(sign.bytes.1, 2);
         assert_eq!(sign.bytes.2, 3);
+    }
+
+    #[test]
+    fn signature_equality() {
+        let s1 = Signature { bytes: (1, 2, 3) };
+        let s2 = Signature { bytes: (1, 2, 3) };
+        assert_eq!(s1, s2);
+    }
+
+    #[test]
+    fn signature_not_equal() {
+        let s1 = Signature { bytes: (1, 2, 3) };
+        let s2 = Signature { bytes: (1, 2, 2) };
+        assert_ne!(s1, s2);
     }
 }

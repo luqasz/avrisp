@@ -1,3 +1,4 @@
+use crate::command as isp_command;
 use crate::errors;
 use crate::programmer;
 use crate::specs;
@@ -394,10 +395,10 @@ impl TryInto<IspMode> for STK500v2 {
             self.specs.byte_delay,
             self.specs.pool_value,
             self.specs.pool_index,
-            specs::PROGRAMMING_ENABLE.0,
-            specs::PROGRAMMING_ENABLE.1,
-            specs::PROGRAMMING_ENABLE.2,
-            specs::PROGRAMMING_ENABLE.3,
+            isp_command::PROGRAMMING_ENABLE.0,
+            isp_command::PROGRAMMING_ENABLE.1,
+            isp_command::PROGRAMMING_ENABLE.2,
+            isp_command::PROGRAMMING_ENABLE.3,
         ];
         self.set_param(param::RW::ResetPolarity, self.specs.reset_polarity.into())?;
         self.command(bytes)?;
@@ -432,7 +433,7 @@ impl IspMode {
             size_bytes[0],
             size_bytes[1],
             // Stk500v2 firmware handles selecting low/high byte when reading.
-            specs::READ_FLASH_LOW.0,
+            isp_command::READ_FLASH_LOW.0,
         ])?;
         let data_offset = 2;
         buffer.copy_from_slice(&msg.body_slice()[data_offset..(size + data_offset)]);
@@ -449,14 +450,14 @@ impl IspMode {
             command::Isp::ReadEeprom.into(),
             size_bytes[0],
             size_bytes[1],
-            specs::READ_EEPROM.0,
+            isp_command::READ_EEPROM.0,
         ])?;
         let data_offset = 2;
         buffer.copy_from_slice(&msg.body_slice()[data_offset..(size + data_offset)]);
         Ok(())
     }
 
-    fn read_fuse(&mut self, cmd: specs::IspCommand) -> Result<u8, errors::ErrorKind> {
+    fn read_fuse(&mut self, cmd: isp_command::IspCommand) -> Result<u8, errors::ErrorKind> {
         let msg = self.prog.command(vec![
             command::Isp::ReadFuse.into(),
             self.prog.specs.fuse_poll_index,
@@ -505,10 +506,10 @@ impl programmer::Erase for IspMode {
             command::Isp::ChipErase.into(),
             self.prog.specs.erase_delay,
             self.prog.specs.erase_poll_method,
-            specs::CHIP_ERASE.0,
-            specs::CHIP_ERASE.1,
-            specs::CHIP_ERASE.2,
-            specs::CHIP_ERASE.3,
+            isp_command::CHIP_ERASE.0,
+            isp_command::CHIP_ERASE.1,
+            isp_command::CHIP_ERASE.2,
+            isp_command::CHIP_ERASE.3,
         ])?;
         Ok(())
     }
@@ -531,10 +532,10 @@ impl programmer::AVRLockByteGet for IspMode {
         let msg = self.prog.command(vec![
             command::Isp::ReadLock.into(),
             self.prog.specs.lock_poll_index,
-            specs::READ_LOCK.0,
-            specs::READ_LOCK.1,
-            specs::READ_LOCK.2,
-            specs::READ_LOCK.3,
+            isp_command::READ_LOCK.0,
+            isp_command::READ_LOCK.1,
+            isp_command::READ_LOCK.2,
+            isp_command::READ_LOCK.3,
         ])?;
         Ok(msg.body_slice()[2])
     }
@@ -543,9 +544,9 @@ impl programmer::AVRLockByteGet for IspMode {
 impl programmer::AVRFuseGet for IspMode {
     fn get_fuses(&mut self) -> Result<programmer::AVRFuse, errors::ErrorKind> {
         Ok(programmer::AVRFuse {
-            low: self.read_fuse(specs::READ_LOW_FUSE)?,
-            high: self.read_fuse(specs::READ_HIGH_FUSE)?,
-            extended: self.read_fuse(specs::READ_EXTENDED_FUSE)?,
+            low: self.read_fuse(isp_command::READ_LOW_FUSE)?,
+            high: self.read_fuse(isp_command::READ_HIGH_FUSE)?,
+            extended: self.read_fuse(isp_command::READ_EXTENDED_FUSE)?,
         })
     }
 }
@@ -557,10 +558,10 @@ impl programmer::MCUSignature for IspMode {
             let msg = self.prog.command(vec![
                 command::Isp::ReadSignature.into(),
                 self.prog.specs.signature_poll_index,
-                specs::READ_SIGNATURE.0,
-                specs::READ_SIGNATURE.1,
+                isp_command::READ_SIGNATURE.0,
+                isp_command::READ_SIGNATURE.1,
                 addr as u8,
-                specs::READ_SIGNATURE.3,
+                isp_command::READ_SIGNATURE.3,
             ])?;
             signature[addr] = msg.body_slice()[2];
         }

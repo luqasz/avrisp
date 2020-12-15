@@ -469,9 +469,9 @@ impl IspMode {
     }
 }
 
+/// Does not work on atmega2560.
+/// Requires some kind of different handling when loading memory address
 impl programmer::FlashRead for IspMode {
-    // Does not work on atmega2560.
-    // Requires some kind of different handling when loading memory address
     fn read(&mut self, buffer: &mut [u8]) -> Result<(), errors::ErrorKind> {
         let size = self.prog.specs.flash.page_size;
         // Stk500v2 firmware handles incrementing address on its own.

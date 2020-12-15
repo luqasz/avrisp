@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    container:
+      image: rust:1-buster
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Unit tests
+        run: cargo test
+
+      - name: Build
+        run: cargo build

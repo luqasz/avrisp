@@ -2,6 +2,7 @@
 /// Can be obtained [here](http://packs.download.atmel.com/). Those are
 /// ZIPs with xml files describing given MCU. Simmilar to SVD for ARM.
 pub mod atmega;
+use std::fmt;
 
 /// Low level ISP command. Can be found in chip datasheet.
 pub type IspCommand = (u8, u8, u8, u8);
@@ -32,6 +33,16 @@ pub const WRITE_LOCK: IspCommand = (0xac, 0xe0, 0x00, 0x00);
 /// MCU signature.
 pub struct Signature {
     pub bytes: (u8, u8, u8),
+}
+
+impl fmt::Display for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{:#04x} {:#04x} {:#04x}",
+            self.bytes.0, self.bytes.1, self.bytes.2
+        )
+    }
 }
 
 impl From<[u8; 3]> for Signature {

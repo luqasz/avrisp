@@ -75,3 +75,7 @@ pub trait AVRLockByteSet {
 pub trait MCUSignature {
     fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, errors::ErrorKind>;
 }
+
+pub trait EEPROMRead {
+    fn read(&mut self, bytes: &mut [u8]) -> Result<(), errors::ErrorKind>;
+}

@@ -1,6 +1,5 @@
 use crate::errors;
 use crate::programmer;
-use crate::programmer::{AVRFuse, AVRFuseGet, AVRLockByteGet, Erase, MCUSignature, Programmer};
 use avrisp;
 use serial::core::{Error, SerialDevice, SerialPortSettings};
 use std::convert::{TryFrom, TryInto};
@@ -446,26 +445,20 @@ impl IspMode {
         Ok(())
     }
 
-    // Does not work on atmega2560.
-    // Requires some kind of different handling when loading memory address
-    pub fn read_eeprom(&mut self, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
-        for (addr, buffer) in (0..bytes.len())
-            .step_by(self.prog.specs.eeprom.page_size)
-            .zip(bytes.chunks_exact_mut(self.prog.specs.eeprom.page_size))
-        {
-            self.load_address(addr)?;
-            let length_bytes = (self.prog.specs.eeprom.page_size as u16).to_be_bytes();
-            let msg = self.prog.command(vec![
-                command::Isp::ReadEeprom.into(),
-                length_bytes[0],
-                length_bytes[1],
-                avrisp::READ_EEPROM.0,
-            ])?;
-            let data_offset = 2;
-            buffer.copy_from_slice(
-                &msg.body_slice()[data_offset..(self.prog.specs.eeprom.page_size + data_offset)],
-            );
-        }
+    fn read_eeprom_command(
+        &mut self,
+        size: usize,
+        buffer: &mut [u8],
+    ) -> Result<(), errors::ErrorKind> {
+        let size_bytes = (size as u16).to_be_bytes();
+        let msg = self.prog.command(vec![
+            command::Isp::ReadEeprom.into(),
+            size_bytes[0],
+            size_bytes[1],
+            avrisp::READ_EEPROM.0,
+        ])?;
+        let data_offset = 2;
+        buffer.copy_from_slice(&msg.body_slice()[data_offset..(size + data_offset)]);
         Ok(())
     }
 
@@ -482,7 +475,22 @@ impl IspMode {
     }
 }
 
-impl Erase for IspMode {
+impl programmer::EEPROMRead for IspMode {
+    fn read(&mut self, bytes: &mut [u8]) -> Result<(), errors::ErrorKind> {
+        // According to AVR068 PDF, LoadAddress command needs to be executed once.
+        // Firmware will increment address on its own. At least in byte mode.
+        //
+        // Tested on stk500v2 programmer, which reduced whole reading time by half.
+        let size = self.prog.specs.eeprom.page_size;
+        self.load_address(0)?;
+        for addr in (0..bytes.len()).step_by(size) {
+            self.read_eeprom_command(size, &mut bytes[addr..(addr + size)])?;
+        }
+        Ok(())
+    }
+}
+
+impl programmer::Erase for IspMode {
     fn erase(&mut self) -> Result<(), errors::ErrorKind> {
         self.prog.command(vec![
             command::Isp::ChipErase.into(),
@@ -497,7 +505,7 @@ impl Erase for IspMode {
     }
 }
 
-impl Programmer for IspMode {
+impl programmer::Programmer for IspMode {
     fn close(mut self) -> Result<(), errors::ErrorKind> {
         let bytes = vec![
             command::Normal::LeaveIspMode.into(),
@@ -509,7 +517,7 @@ impl Programmer for IspMode {
     }
 }
 
-impl AVRLockByteGet for IspMode {
+impl programmer::AVRLockByteGet for IspMode {
     fn get_lock_byte(&mut self) -> Result<u8, errors::ErrorKind> {
         let msg = self.prog.command(vec![
             command::Isp::ReadLock.into(),
@@ -523,9 +531,9 @@ impl AVRLockByteGet for IspMode {
     }
 }
 
-impl AVRFuseGet for IspMode {
-    fn get_fuses(&mut self) -> Result<AVRFuse, errors::ErrorKind> {
-        Ok(AVRFuse {
+impl programmer::AVRFuseGet for IspMode {
+    fn get_fuses(&mut self) -> Result<programmer::AVRFuse, errors::ErrorKind> {
+        Ok(programmer::AVRFuse {
             low: self.read_fuse(avrisp::READ_LOW_FUSE)?,
             high: self.read_fuse(avrisp::READ_HIGH_FUSE)?,
             extended: self.read_fuse(avrisp::READ_EXTENDED_FUSE)?,
@@ -533,7 +541,7 @@ impl AVRFuseGet for IspMode {
     }
 }
 
-impl MCUSignature for IspMode {
+impl programmer::MCUSignature for IspMode {
     fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, errors::ErrorKind> {
         let mut signature: [u8; 3] = [0; 3];
         for addr in 0..signature.len() {

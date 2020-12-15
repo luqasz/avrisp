@@ -1,0 +1,73 @@
+use crate::specs::*;
+
+pub const ATMEGA_32: Specs = Specs {
+    timeout: 0xc8,
+    stab_delay: 0x64,
+    cmd_exe_delay: 0x19,
+    synch_loops: 0x20,
+    byte_delay: 0x00,
+    pool_value: 0x53,
+    pool_index: 0x03,
+    pre_delay: 1,
+    erase_poll_method: 0,
+    erase_delay: 20,
+    fuse_poll_index: 4,
+    lock_poll_index: 4,
+    signature_poll_index: 4,
+    osccal_poll_index: 4,
+    post_delay: 1,
+    reset_polarity: true,
+    flash: Memory {
+        page_size: 128,
+        start: 0,
+        size: 32768,
+        mode: 0x21,
+        delay: 10,
+    },
+    eeprom: Memory {
+        page_size: 4,
+        start: 0,
+        size: 1024,
+        mode: 0x04,
+        delay: 20,
+    },
+    signature: Signature {
+        bytes: (0x1e, 0x95, 0x02),
+    },
+};
+
+pub const ATMEGA_2560: Specs = Specs {
+    timeout: 200,
+    stab_delay: 100,
+    cmd_exe_delay: 25,
+    synch_loops: 32,
+    byte_delay: 0,
+    pool_value: 0x53,
+    pool_index: 3,
+    pre_delay: 1,
+    erase_poll_method: 0,
+    erase_delay: 55,
+    fuse_poll_index: 4,
+    lock_poll_index: 4,
+    signature_poll_index: 4,
+    osccal_poll_index: 4,
+    post_delay: 1,
+    reset_polarity: true,
+    flash: Memory {
+        size: 262144,
+        start: 0,
+        page_size: 256,
+        mode: 0x21,
+        delay: 10,
+    },
+    eeprom: Memory {
+        page_size: 8,
+        start: 0,
+        size: 4096,
+        mode: 0x04,
+        delay: 20,
+    },
+    signature: Signature {
+        bytes: (0x1e, 0x98, 0x01),
+    },
+};

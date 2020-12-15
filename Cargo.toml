@@ -3,6 +3,11 @@ name = "avrisp"
 version = "0.3.0"
 authors = ["Łukasz Kostka <lukasz.g.kostka@gmail.com>"]
 edition = "2018"
+description = "AVR ISP library for programmers"
+repository = "https://github.com/luqasz/avrisp"
+license = "MIT OR Apache-2.0"
+keywords = ["avr", "atmega", "arduino", "stk500"]
+categories = ["embedded"]
 
 [dependencies]
 serial = "0.4.*"

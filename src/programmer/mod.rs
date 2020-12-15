@@ -79,3 +79,7 @@ pub trait MCUSignature {
 pub trait EEPROMRead {
     fn read(&mut self, bytes: &mut [u8]) -> Result<(), errors::ErrorKind>;
 }
+
+pub trait FlashRead {
+    fn read(&mut self, bytes: &mut [u8]) -> Result<(), errors::ErrorKind>;
+}

@@ -420,28 +420,21 @@ impl IspMode {
         Ok(())
     }
 
-    // Does not work on atmega2560.
-    // Requires some kind of different handling when loading memory address
-    pub fn read_flash(&mut self, buffer: &mut [u8]) -> Result<(), errors::ErrorKind> {
-        // For word-addressed memories (program flash), the Address parameter is the word address.
-        let bytes_to_read = self.prog.specs.flash.page_size;
-        // Block size is given in Kwords. Word is 16 bit.
-        let step_by = self.prog.specs.flash.block_size;
-        for (addr, buffer) in (0..buffer.len())
-            .step_by(step_by)
-            .zip(buffer.chunks_exact_mut(bytes_to_read))
-        {
-            self.load_address(addr)?;
-            let to_read_as_bytes = (bytes_to_read as u16).to_be_bytes();
-            let msg = self.prog.command(vec![
-                command::Isp::ReadFlash.into(),
-                to_read_as_bytes[0],
-                to_read_as_bytes[1],
-                avrisp::READ_FLASH_LOW.0,
-            ])?;
-            let data_offset = 2;
-            buffer.copy_from_slice(&msg.body_slice()[data_offset..(bytes_to_read + data_offset)]);
-        }
+    fn read_flash_command(
+        &mut self,
+        size: usize,
+        buffer: &mut [u8],
+    ) -> Result<(), errors::ErrorKind> {
+        let size_bytes = (size as u16).to_be_bytes();
+        let msg = self.prog.command(vec![
+            command::Isp::ReadFlash.into(),
+            size_bytes[0],
+            size_bytes[1],
+            // Stk500v2 firmware handles selecting low/high byte when reading.
+            avrisp::READ_FLASH_LOW.0,
+        ])?;
+        let data_offset = 2;
+        buffer.copy_from_slice(&msg.body_slice()[data_offset..(size + data_offset)]);
         Ok(())
     }
 
@@ -472,6 +465,21 @@ impl IspMode {
             cmd.3,
         ])?;
         Ok(msg.body_slice()[2])
+    }
+}
+
+impl programmer::FlashRead for IspMode {
+    // Does not work on atmega2560.
+    // Requires some kind of different handling when loading memory address
+    fn read(&mut self, buffer: &mut [u8]) -> Result<(), errors::ErrorKind> {
+        let size = self.prog.specs.flash.page_size;
+        // Stk500v2 firmware handles incrementing address on its own.
+        // Reduces reading time since no load address command needs to be send.
+        self.load_address(0)?;
+        for addr in (0..buffer.len()).step_by(size) {
+            self.read_flash_command(size, &mut buffer[addr..(addr + size)])?;
+        }
+        Ok(())
     }
 }
 

@@ -1,37 +1,38 @@
 pub mod errors;
 pub mod programmer;
 use avrisp;
-use programmer::stk500v2;
-use programmer::stk500v2::IspMode;
-use programmer::{AVRFuseGet, AVRLockByteGet, EEPROMRead, MCUSignature, Programmer};
-use std::convert::TryInto;
+use programmer::*;
+use std::convert::*;
 use std::fs::File;
 use std::io::prelude::*;
 
-const SPECS: avrisp::Specs = avrisp::atmega::ATMEGA_2560;
+const SPECS: avrisp::Specs = avrisp::atmega::ATMEGA_32;
 
 fn main() -> Result<(), errors::ErrorKind> {
-    let mut flash: Vec<u8> = vec![0; SPECS.flash.size];
     let port = "/dev/serial/by-id/usb-microSENSE_USB_AVR_ISP_II_FT-STK500v2_FTWAKGHJ-if00-port0"
         .to_string();
-    let mut stk = stk500v2::STK500v2::open(&port, SPECS).unwrap();
-    let mut isp: IspMode = stk.try_into()?;
+    let stk = stk500v2::STK500v2::open(&port, SPECS).unwrap();
+    let mut isp: stk500v2::IspMode = stk.try_into()?;
+    fuses(&mut isp)?;
+    lock_bytes(&mut isp)?;
+    signature(&mut isp)?;
+    flash(&mut isp)?;
     eeprom(&mut isp)?;
     isp.close()?;
     return Ok(());
 }
 
-fn fuses<T: AVRFuseGet>(programmer: &mut T) -> Result<(), errors::ErrorKind> {
+fn fuses<T: programmer::AVRFuseGet>(programmer: &mut T) -> Result<(), errors::ErrorKind> {
     println!("fuses: {}", programmer.get_fuses()?);
     Ok(())
 }
 
-fn lock_bytes<T: AVRLockByteGet>(programmer: &mut T) -> Result<(), errors::ErrorKind> {
+fn lock_bytes<T: programmer::AVRLockByteGet>(programmer: &mut T) -> Result<(), errors::ErrorKind> {
     println!("lock byte {:#04X}", programmer.get_lock_byte()?);
     Ok(())
 }
 
-fn signature<T: MCUSignature>(programmer: &mut T) -> Result<(), errors::ErrorKind> {
+fn signature<T: programmer::MCUSignature>(programmer: &mut T) -> Result<(), errors::ErrorKind> {
     let sign = programmer.get_mcu_signature()?;
     println!(
         "MCU signature: {:#04x} {:#04x} {:#04x}",
@@ -40,10 +41,18 @@ fn signature<T: MCUSignature>(programmer: &mut T) -> Result<(), errors::ErrorKin
     Ok(())
 }
 
-fn eeprom<T: EEPROMRead>(programmer: &mut T) -> Result<(), errors::ErrorKind> {
+fn eeprom<T: programmer::EEPROMRead>(programmer: &mut T) -> Result<(), errors::ErrorKind> {
     let mut eeprom: Vec<u8> = vec![0; SPECS.eeprom.size];
     programmer.read(&mut eeprom)?;
     dump(&mut eeprom, String::from("eeprom.bin"));
+    Ok(())
+}
+
+fn flash<T: programmer::FlashRead>(programmer: &mut T) -> Result<(), errors::ErrorKind> {
+    let mut flash: Vec<u8> = vec![0; SPECS.flash.size];
+    programmer.read(&mut flash)?;
+    truncate(&mut flash);
+    dump(&mut flash, String::from("flash.bin"));
     Ok(())
 }
 
@@ -57,7 +66,7 @@ fn truncate(bytes: &mut Vec<u8>) {
     bytes.truncate(end);
 }
 
-fn dump(bytes: &mut Vec<u8>, name: String) {
+fn dump(bytes: &Vec<u8>, name: String) {
     let mut file = File::create(name).unwrap();
     file.write_all(&bytes).unwrap();
 }

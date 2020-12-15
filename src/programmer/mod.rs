@@ -1,6 +1,7 @@
 #[allow(dead_code)]
 pub mod stk500v2;
 use crate::errors;
+use crate::specs;
 use std::convert::TryFrom;
 use std::fmt;
 
@@ -73,7 +74,7 @@ pub trait AVRLockByteSet {
 }
 
 pub trait MCUSignature {
-    fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, errors::ErrorKind>;
+    fn get_mcu_signature(&mut self) -> Result<specs::Signature, errors::ErrorKind>;
 }
 
 pub trait EEPROMRead {

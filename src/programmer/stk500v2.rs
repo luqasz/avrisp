@@ -1,6 +1,6 @@
 use crate::errors;
 use crate::programmer;
-use avrisp;
+use crate::specs;
 use serial::core::{Error, SerialDevice, SerialPortSettings};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
@@ -276,11 +276,11 @@ impl Iterator for SequenceGenerator {
 pub struct STK500v2 {
     port: serial::SystemPort,
     sequencer: SequenceGenerator,
-    specs: avrisp::Specs,
+    specs: specs::Specs,
 }
 
 impl STK500v2 {
-    pub fn open(port: &String, specs: avrisp::Specs) -> Result<STK500v2, Error> {
+    pub fn open(port: &String, specs: specs::Specs) -> Result<STK500v2, Error> {
         let mut port = serial::open(&port)?;
         let mut settings = port.read_settings()?;
 
@@ -393,10 +393,10 @@ impl TryInto<IspMode> for STK500v2 {
             self.specs.byte_delay,
             self.specs.pool_value,
             self.specs.pool_index,
-            avrisp::PROGRAMMING_ENABLE.0,
-            avrisp::PROGRAMMING_ENABLE.1,
-            avrisp::PROGRAMMING_ENABLE.2,
-            avrisp::PROGRAMMING_ENABLE.3,
+            specs::PROGRAMMING_ENABLE.0,
+            specs::PROGRAMMING_ENABLE.1,
+            specs::PROGRAMMING_ENABLE.2,
+            specs::PROGRAMMING_ENABLE.3,
         ];
         self.set_param(param::RW::ResetPolarity, self.specs.reset_polarity.into())?;
         self.command(bytes)?;
@@ -431,7 +431,7 @@ impl IspMode {
             size_bytes[0],
             size_bytes[1],
             // Stk500v2 firmware handles selecting low/high byte when reading.
-            avrisp::READ_FLASH_LOW.0,
+            specs::READ_FLASH_LOW.0,
         ])?;
         let data_offset = 2;
         buffer.copy_from_slice(&msg.body_slice()[data_offset..(size + data_offset)]);
@@ -448,14 +448,14 @@ impl IspMode {
             command::Isp::ReadEeprom.into(),
             size_bytes[0],
             size_bytes[1],
-            avrisp::READ_EEPROM.0,
+            specs::READ_EEPROM.0,
         ])?;
         let data_offset = 2;
         buffer.copy_from_slice(&msg.body_slice()[data_offset..(size + data_offset)]);
         Ok(())
     }
 
-    fn read_fuse(&mut self, cmd: avrisp::IspCommand) -> Result<u8, errors::ErrorKind> {
+    fn read_fuse(&mut self, cmd: specs::IspCommand) -> Result<u8, errors::ErrorKind> {
         let msg = self.prog.command(vec![
             command::Isp::ReadFuse.into(),
             self.prog.specs.fuse_poll_index,
@@ -504,10 +504,10 @@ impl programmer::Erase for IspMode {
             command::Isp::ChipErase.into(),
             self.prog.specs.erase_delay,
             self.prog.specs.erase_poll_method,
-            avrisp::CHIP_ERASE.0,
-            avrisp::CHIP_ERASE.1,
-            avrisp::CHIP_ERASE.2,
-            avrisp::CHIP_ERASE.3,
+            specs::CHIP_ERASE.0,
+            specs::CHIP_ERASE.1,
+            specs::CHIP_ERASE.2,
+            specs::CHIP_ERASE.3,
         ])?;
         Ok(())
     }
@@ -530,10 +530,10 @@ impl programmer::AVRLockByteGet for IspMode {
         let msg = self.prog.command(vec![
             command::Isp::ReadLock.into(),
             self.prog.specs.lock_poll_index,
-            avrisp::READ_LOCK.0,
-            avrisp::READ_LOCK.1,
-            avrisp::READ_LOCK.2,
-            avrisp::READ_LOCK.3,
+            specs::READ_LOCK.0,
+            specs::READ_LOCK.1,
+            specs::READ_LOCK.2,
+            specs::READ_LOCK.3,
         ])?;
         Ok(msg.body_slice()[2])
     }
@@ -542,28 +542,28 @@ impl programmer::AVRLockByteGet for IspMode {
 impl programmer::AVRFuseGet for IspMode {
     fn get_fuses(&mut self) -> Result<programmer::AVRFuse, errors::ErrorKind> {
         Ok(programmer::AVRFuse {
-            low: self.read_fuse(avrisp::READ_LOW_FUSE)?,
-            high: self.read_fuse(avrisp::READ_HIGH_FUSE)?,
-            extended: self.read_fuse(avrisp::READ_EXTENDED_FUSE)?,
+            low: self.read_fuse(specs::READ_LOW_FUSE)?,
+            high: self.read_fuse(specs::READ_HIGH_FUSE)?,
+            extended: self.read_fuse(specs::READ_EXTENDED_FUSE)?,
         })
     }
 }
 
 impl programmer::MCUSignature for IspMode {
-    fn get_mcu_signature(&mut self) -> Result<avrisp::Signature, errors::ErrorKind> {
+    fn get_mcu_signature(&mut self) -> Result<specs::Signature, errors::ErrorKind> {
         let mut signature: [u8; 3] = [0; 3];
         for addr in 0..signature.len() {
             let msg = self.prog.command(vec![
                 command::Isp::ReadSignature.into(),
                 self.prog.specs.signature_poll_index,
-                avrisp::READ_SIGNATURE.0,
-                avrisp::READ_SIGNATURE.1,
+                specs::READ_SIGNATURE.0,
+                specs::READ_SIGNATURE.1,
                 addr as u8,
-                avrisp::READ_SIGNATURE.3,
+                specs::READ_SIGNATURE.3,
             ])?;
             signature[addr] = msg.body_slice()[2];
         }
-        Ok(avrisp::Signature::from(signature))
+        Ok(specs::Signature::from(signature))
     }
 }
 

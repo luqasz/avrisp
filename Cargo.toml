@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 serial = "0.4.*"
-avrisp = "0.3.*"
 
 [dev-dependencies]
 claim = "0.4"

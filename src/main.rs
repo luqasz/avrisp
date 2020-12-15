@@ -1,12 +1,12 @@
 pub mod errors;
 pub mod programmer;
-use avrisp;
+pub mod specs;
 use programmer::*;
 use std::convert::*;
 use std::fs::File;
 use std::io::prelude::*;
 
-const SPECS: avrisp::Specs = avrisp::atmega::ATMEGA_32;
+const SPECS: specs::Specs = specs::atmega::ATMEGA_32;
 
 fn main() -> Result<(), errors::ErrorKind> {
     let port = "/dev/serial/by-id/usb-microSENSE_USB_AVR_ISP_II_FT-STK500v2_FTWAKGHJ-if00-port0"

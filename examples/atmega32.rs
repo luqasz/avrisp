@@ -1,7 +1,7 @@
-pub mod errors;
-pub mod programmer;
-pub mod specs;
-use programmer::*;
+use avrisp::errors;
+use avrisp::programmer;
+use avrisp::programmer::*;
+use avrisp::specs;
 use std::convert::*;
 use std::fs::File;
 use std::io::prelude::*;

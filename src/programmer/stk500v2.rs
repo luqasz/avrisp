@@ -305,7 +305,6 @@ impl STK500v2 {
     }
 
     fn write_message(&mut self, msg: Message) -> Result<(), errors::ErrorKind> {
-        println!("write message {}", msg);
         self.port.write_all(msg.as_slice())?;
         self.port.flush()?;
         return Ok(());
@@ -322,7 +321,6 @@ impl STK500v2 {
         self.port
             .read_exact(&mut buffer[Message::BODY_START_POSITION..end])?;
         let msg = Message::try_from(buffer)?;
-        println!("got message {}", msg);
         return Ok(msg);
     }
 

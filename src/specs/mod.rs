@@ -1,5 +1,9 @@
+/// All listed specifications and parameters come from atdf files.
+/// Can be obtained [here](http://packs.download.atmel.com/). Those are
+/// ZIPs with xml files describing given MCU. Simmilar to SVD for ARM.
 pub mod atmega;
 
+/// Low level ISP command. Can be found in chip datasheet.
 pub type IspCommand = (u8, u8, u8, u8);
 
 pub const PROGRAMMING_ENABLE: IspCommand = (0xac, 0x53, 0x00, 0x00);
@@ -25,7 +29,7 @@ pub const WRITE_HIGH_FUSE: IspCommand = (0xac, 0xa8, 0x00, 0x00);
 pub const WRITE_EXTENDED_FUSE: IspCommand = (0xac, 0xa4, 0x00, 0x00);
 pub const WRITE_LOCK: IspCommand = (0xac, 0xe0, 0x00, 0x00);
 
-/// AVR MCU signature.
+/// MCU signature.
 pub struct Signature {
     pub bytes: (u8, u8, u8),
 }
@@ -44,36 +48,59 @@ impl From<(u8, u8, u8)> for Signature {
     }
 }
 
-/// Memory segment e.g. EEPROM, flash.
-#[allow(dead_code)]
+/// Memory segment. EEPROM or flash.
 pub struct Memory {
-    pub start: usize, // Start address of a given memory section. Given in XML in address-spaces section
-    pub size: usize,  // Total number of bytes. Given in XML in address-spaces section
-    pub page_size: usize, // Page size in bytes. Given in XML in address-spaces section
+    /// Start address of a given memory section. Given in XML in `address-spaces` section
+    pub start: usize,
+    /// Total number of bytes. Given in XML in `address-spaces` section
+    pub size: usize,
+    /// Page size in bytes. Given in XML in `address-spaces` section
+    pub page_size: usize,
+    /// In xml:
+    /// * `ISP_INTERFACE/IspProgramFlash_mode` for flash.
+    /// * `ISP_INTERFACE/IspProgramEeprom_mode` for eeprom.
     pub mode: usize,
+    /// In xml:
+    /// * `ISP_INTERFACE/IspProgramFlash_delay` for flash.
+    /// * `ISP_INTERFACE/IspProgramEeprom_delay` for eeprom.
     pub delay: usize,
 }
 
-/// MCU specs used for programming.
+/// Parameters required by programmers.
 ///
-/// Can be obtained from atdf files found in atpack on http://packs.download.atmel.com/
+/// Can be found in xml (under `ISP_INTERFACE`) for given chip.
 pub struct Specs {
+    /// `IspEnterProgMode_timeout`
     pub timeout: u8,
+    /// `IspEnterProgMode_stabDelay`
     pub stab_delay: u8,
+    /// `IspEnterProgMode_cmdexeDelay`
     pub cmd_exe_delay: u8,
+    /// `IspEnterProgMode_synchLoops`
     pub synch_loops: u8,
+    /// `IspEnterProgMode_byteDelay`
     pub byte_delay: u8,
+    /// `IspEnterProgMode_pollValue`
     pub pool_value: u8,
+    /// `IspEnterProgMode_pollIndex`
     pub pool_index: u8,
+    /// `IspLeaveProgMode_preDelay`
     pub pre_delay: u8,
+    /// `IspLeaveProgMode_postDelay`
     pub post_delay: u8,
     pub reset_polarity: bool,
+    /// `IspChipErase_pollMethod`
     pub erase_poll_method: u8,
+    /// `IspChipErase_eraseDelay`
     pub erase_delay: u8,
     pub signature: Signature,
+    /// `IspReadFuse_pollIndex`
     pub fuse_poll_index: u8,
+    /// `IspReadLock_pollIndex`
     pub lock_poll_index: u8,
+    /// `IspReadOsccal_pollIndex`
     pub osccal_poll_index: u8,
+    /// `IspReadSign_pollIndex`
     pub signature_poll_index: u8,
     pub flash: Memory,
     pub eeprom: Memory,

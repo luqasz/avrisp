@@ -136,13 +136,15 @@ pub enum TopCard {
     STK520 = 0xDD,
 }
 
-/// Message structure:
-/// Message start
-/// Sequence number (u8 incremented for each message sent, overflows after 0xff)
-/// Body length (maximum of 275 bytes, in big endian order)
-/// Token
-/// Body as bytes
-/// Calculated checksum
+/// Communication binary message with programmer.
+///
+/// Structure:
+/// 1. Message start
+/// 1. Sequence number. See [`SequenceGenerator`]
+/// 1. Body length. Two bytes (maximum 275) in big endian order.
+/// 1. Token
+/// 1. Body
+/// 1. Calculated checksum
 #[derive(Debug)]
 struct Message {
     buffer: MessageBuffer,
@@ -178,6 +180,7 @@ impl Message {
         Self { buffer }
     }
 
+    /// Return sequence number.
     fn get_sequence(&self) -> u8 {
         self.buffer[Self::SEQ_PSITION]
     }
@@ -189,8 +192,7 @@ impl Message {
         ])
     }
 
-    // Return ending index at where message ends.
-    // That is index including.
+    /// Return ending index at where message ends. That is index including.
     fn get_end_index(&self) -> usize {
         Self::BODY_START_POSITION + self.get_body_size() as usize
     }
@@ -199,6 +201,7 @@ impl Message {
         &self.buffer[Self::BODY_START_POSITION..self.get_end_index()]
     }
 
+    /// Return whole message as slice.
     fn as_slice(&self) -> &[u8] {
         &self.buffer[..=self.get_end_index()]
     }

@@ -48,12 +48,12 @@ impl TryFrom<String> for Variant {
 }
 
 pub trait Programmer {
-    // Close and release all resources.
+    /// Close and release all resources.
     fn close(self) -> Result<(), errors::ErrorKind>;
 }
 
-// Perform full chip erase including EEPROM and flash.
 pub trait Erase {
+    /// Perform full chip erase including EEPROM and flash.
     fn erase(&mut self) -> Result<(), errors::ErrorKind>;
 }
 

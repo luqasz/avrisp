@@ -6,6 +6,7 @@ Code is experimental untill it hits 1.x version.
 * reading lock byte
 * reading EEPROM
 * reading flash
+* erasing
 
 ### Implemented programmers
 * stk500v2

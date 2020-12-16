@@ -470,14 +470,23 @@ impl IspMode {
     }
 }
 
-/// Does not work on atmega2560.
-/// Requires some kind of different handling when loading memory address
 impl programmer::FlashRead for IspMode {
     fn read(&mut self, buffer: &mut [u8]) -> Result<(), errors::ErrorKind> {
         let size = self.prog.specs.flash.page_size;
+        // If device has more than 64K flash, set bit 31.
+        //
+        // From AVR068:
+        // If bit 31 is set, this indicates that the following read/write operation will be performed
+        // on a memory that is larger than 64KBytes. This is an indication to STK500 that a load
+        // extended address must be executed.
+        let start = if self.prog.specs.flash.size > 65536 {
+            1 << 31
+        } else {
+            0
+        };
         // Stk500v2 firmware handles incrementing address on its own.
         // Reduces reading time since no load address command needs to be send.
-        self.load_address(0)?;
+        self.load_address(start)?;
         for addr in (0..buffer.len()).step_by(size) {
             self.read_flash_command(size, &mut buffer[addr..(addr + size)])?;
         }

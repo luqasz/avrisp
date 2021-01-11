@@ -2,7 +2,7 @@ use crate::command as isp_command;
 use crate::errors;
 use crate::programmer;
 use crate::specs;
-use serial::core::{Error, SerialDevice, SerialPortSettings};
+use serial::core::{Error, PortSettings, SerialPort};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::io::prelude::*;
@@ -283,20 +283,20 @@ pub struct STK500v2 {
     specs: specs::Specs,
 }
 
+const SERIAL_SETTINGS: PortSettings = PortSettings {
+    baud_rate: serial::Baud115200,
+    char_size: serial::Bits8,
+    parity: serial::ParityNone,
+    stop_bits: serial::Stop1,
+    // Must be set to none.
+    // Otherwise programmer may hang at random command.
+    flow_control: serial::FlowNone,
+};
+
 impl STK500v2 {
     pub fn open(port: &String, specs: specs::Specs) -> Result<STK500v2, Error> {
         let mut port = serial::open(&port)?;
-        let mut settings = port.read_settings()?;
-
-        settings.set_baud_rate(serial::Baud115200)?;
-        settings.set_parity(serial::ParityNone);
-        settings.set_stop_bits(serial::Stop1);
-        settings.set_char_size(serial::Bits8);
-        // Must be set to none.
-        // Otherwise programmer may hang at random command.
-        settings.set_flow_control(serial::FlowNone);
-
-        port.write_settings(&settings)?;
+        port.configure(&SERIAL_SETTINGS)?;
         port.set_timeout(Duration::from_secs(1))?;
         Ok(STK500v2 {
             port,
